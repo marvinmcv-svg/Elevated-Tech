@@ -79,7 +79,6 @@ export const en: Dictionary = {
         chips: ["Website", "QR menu", "POS", "Reports"],
       },
     ],
-    robotSlot: "Marvin's 3D robot",
   },
   stats: [
     { value: 3, suffix: "", label: "Bolivian cities we already serve" },

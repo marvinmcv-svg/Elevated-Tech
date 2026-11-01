@@ -148,7 +148,6 @@ export function Hero({ copy, needs }: { copy: Dictionary["hero"]; needs: string[
         {/* 3D / robot slot. On mobile it sits behind the copy, softened for readability. */}
         <HeroVisual
           shared={shared.current}
-          robotLabel={copy.robotSlot}
           className="pointer-events-none absolute -right-[38%] -top-6 aspect-square w-[95%] opacity-45 sm:-right-[20%] sm:w-[70%] lg:pointer-events-auto lg:relative lg:right-auto lg:top-auto lg:h-[min(calc(100svh-13rem),44rem)] lg:w-auto lg:max-w-full lg:justify-self-end lg:opacity-100"
         />
       </div>

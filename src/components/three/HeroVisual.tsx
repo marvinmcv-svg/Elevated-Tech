@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { TodoBadge } from "@/components/ui/Placeholder";
+import Image from "next/image";
 import { cn } from "@/lib/ui";
 
 const HeroScene = dynamic(() => import("./HeroScene"), { ssr: false });
@@ -25,11 +25,10 @@ function canRender3D() {
 }
 
 /**
- * ROBOT SLOT. The 3D area of the hero. Loads the WebGL scene lazily (after the page is idle)
- * on capable devices, and shows a lightweight CSS fallback everywhere else.
- * TODO(launch): Marvin's 3D robot goes inside HeroScene (see the note at the top of HeroScene.tsx).
+ * ROBOT SLOT. The 3D area of the hero. Loads the WebGL scene (El Camba, see Robot.tsx) lazily
+ * after the page is idle on capable devices. Everyone else sees a still render of the same robot.
  */
-export function HeroVisual({ shared, robotLabel, className }: { shared: Shared; robotLabel: string; className?: string }) {
+export function HeroVisual({ shared, className }: { shared: Shared; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<"pending" | "3d" | "fallback">("pending");
   const [ready, setReady] = useState(false);
@@ -76,27 +75,15 @@ export function HeroVisual({ shared, robotLabel, className }: { shared: Shared; 
           mode === "3d" && ready ? "opacity-0" : "opacity-100",
         )}
       >
-        <FallbackOrb />
+        <div className="relative size-full">
+          <Image src="/robot/el-camba.webp" alt="" fill priority sizes="(min-width: 1024px) 44rem, 95vw" className="object-contain" />
+        </div>
       </div>
       {mode === "3d" && (
         <div className={cn("absolute inset-0 transition-opacity duration-1000", ready ? "opacity-100" : "opacity-0")}>
           <HeroScene shared={shared} running={visible} />
         </div>
       )}
-      <div className="absolute bottom-4 left-1/2 hidden -translate-x-1/2 lg:block">
-        <TodoBadge label={robotLabel} />
-      </div>
-    </div>
-  );
-}
-
-function FallbackOrb() {
-  return (
-    <div className="relative aspect-square w-[62%]">
-      <div className="absolute inset-[-28%] rounded-full border border-brand-ink/25 [transform:rotateX(70deg)_rotateZ(20deg)]" />
-      <div className="absolute inset-[-14%] rounded-full border border-brand/50 [transform:rotateX(65deg)_rotateZ(-30deg)]" />
-      <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_32%_28%,#c8ffdd_0%,#19e36b_32%,#067a37_68%,#04391c_100%)] shadow-[0_40px_120px_-20px_rgb(25_227_107/0.55)]" />
-      <div className="absolute inset-0 rounded-full bg-[repeating-radial-gradient(circle_at_60%_70%,transparent_0_14px,rgb(4_57_28/0.18)_15px_16px)] mix-blend-multiply" />
     </div>
   );
 }

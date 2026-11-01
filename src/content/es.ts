@@ -80,7 +80,6 @@ export const es = {
         chips: ["Web", "Menú QR", "POS", "Reportes"],
       },
     ],
-    robotSlot: "Robot 3D de Marvin",
   },
   stats: [
     { value: 3, suffix: "", label: "ciudades de Bolivia donde ya trabajamos" },
