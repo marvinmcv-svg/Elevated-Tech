@@ -20,6 +20,7 @@ declare global {
  *  - [data-parallax="0.15"]   scroll parallax
  *  - [data-draw="x" | "y"]    line that draws with scroll progress
  *  - [data-rail-section]      pinned horizontal project rail (desktop only)
+ *  - [data-timeline]          process timeline with the robot walking down it
  *  - .spotlight               cursor-following glow on cards
  * Everything is skipped for prefers-reduced-motion; content stays fully visible.
  */
@@ -166,11 +167,25 @@ export function MotionRoot() {
         );
       });
 
-      // 7. Process steps light up as the line reaches them
+      // 7. Process timeline: El Camba walks down the line as you scroll, the line fills behind him
+      gsap.utils.toArray<HTMLElement>("[data-timeline]").forEach((tl) => {
+        const traveler = tl.querySelector<HTMLElement>("[data-traveler]");
+        const fill = tl.querySelector<HTMLElement>("[data-timeline-fill]");
+        const st = { trigger: tl, start: "top 55%", end: "bottom 55%", scrub: 0.5 };
+        if (fill) gsap.fromTo(fill, { scaleY: 0 }, { scaleY: 1, ease: "none", scrollTrigger: st });
+        if (traveler)
+          gsap.fromTo(
+            traveler,
+            { y: 0 },
+            { y: () => tl.offsetHeight, ease: "none", scrollTrigger: { ...st, invalidateOnRefresh: true } },
+          );
+      });
+
+      // 8. Process steps light up as the traveller reaches them
       gsap.utils.toArray<HTMLElement>("[data-step]").forEach((el) => {
         ScrollTrigger.create({
           trigger: el,
-          start: "top 70%",
+          start: "center 55%",
           onEnter: () => el.setAttribute("data-on", "true"),
           onLeaveBack: () => el.removeAttribute("data-on"),
         });

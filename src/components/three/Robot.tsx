@@ -33,6 +33,36 @@ const C = {
   sole: "#2b2421",
 };
 
+/**
+ * One outfit per hero slide: 0 camba (sombrero de paja, neckerchief, tari), 1 AI receptionist
+ * (headset, tie, badge, chat bubble), 2 web designer (backwards cap, hoodie, jeans, floating browser),
+ * 3 teacher (glasses, bow tie, sweater vest, book), 4 chef (toque, double-breasted coat, apron, spoon).
+ * Parts are tagged with userData.outfits and shown/hidden when the outfit swaps mid-spin.
+ */
+const OUTFITS = [
+  { shirt: "#f6f3ea", sleeve: "#f6f3ea", pants: "#f6f3ea" },
+  { shirt: "#e4edf8", sleeve: "#e4edf8", pants: "#2b3036" },
+  { shirt: "#f6f3ea", sleeve: "#1d2722", pants: "#3e5f88" },
+  { shirt: "#fbfbf8", sleeve: "#fbfbf8", pants: "#a48f68" },
+  { shirt: "#fdfdfb", sleeve: "#fdfdfb", pants: "#26292c" },
+];
+const shade = (hex: string) => "#" + new THREE.Color(hex).multiplyScalar(0.88).getHexString();
+/** Swap spin length in seconds. */
+const SWAP = 0.95;
+const only = (...outfits: number[]) => ({ outfits });
+
+function clothMat(color: string, bump: THREE.Texture, roughness = 0.92) {
+  return new THREE.MeshPhysicalMaterial({
+    color,
+    roughness,
+    sheen: 0.8,
+    sheenColor: new THREE.Color(color).lerp(new THREE.Color("#ffffff"), 0.6),
+    sheenRoughness: 0.55,
+    bumpMap: bump,
+    bumpScale: 0.6,
+  });
+}
+
 /* ----------------------------------------------------------------------------------------------
  * Geometry helpers
  * -------------------------------------------------------------------------------------------- */
@@ -107,103 +137,84 @@ function rng(seed: number) {
  * Procedural textures
  * -------------------------------------------------------------------------------------------- */
 
-/** Braided palm ("saó") weave: diagonal over-under strips with natural colour variation. */
-function strawTextures() {
-  const N = 512;
-  const cell = 32;
+/**
+ * Paja (palm straw) plait, the way Santa Cruz hats are made: thin braided strips sewn in a spiral,
+ * so on the hat they read as fine concentric rings with a herringbone texture. Pale, sun-bleached
+ * cream, not golden wicker. Rows run along the texture's x axis; on the lathe-built hat that turns
+ * into rings around the crown and brim.
+ */
+function plaitTextures() {
+  const W = 512;
+  const H = 512;
+  const row = 32;
   const r = rng(7);
-  const tones = ["#e4c47e", "#d8b467", "#cfa758", "#e9cf92", "#c79c4d"];
+  const tones = ["#efdfb2", "#e7d29e", "#dfc68c", "#f2e5bf", "#d9bd7f", "#eadaa8"];
   const draw = (ctx: CanvasRenderingContext2D, bump: boolean) => {
-    ctx.fillStyle = bump ? "#555" : "#b98d45";
-    ctx.fillRect(0, 0, N, N);
-    ctx.save();
-    ctx.translate(N / 2, N / 2);
-    ctx.rotate(Math.PI / 4);
-    ctx.translate(-N, -N);
-    const n = Math.ceil((N * 2) / cell);
-    for (let i = 0; i < n; i++) {
-      for (let j = 0; j < n; j++) {
-        const horizontal = (i + j) % 2 === 0;
-        const x = i * cell;
-        const y = j * cell;
-        const pad = 2;
-        if (bump) {
-          const g = horizontal
-            ? ctx.createLinearGradient(x, y, x, y + cell)
-            : ctx.createLinearGradient(x, y, x + cell, y);
-          g.addColorStop(0, "#444");
-          g.addColorStop(0.5, "#eee");
-          g.addColorStop(1, "#444");
-          ctx.fillStyle = g;
-        } else {
-          ctx.fillStyle = tones[Math.floor(r() * tones.length)];
-        }
-        ctx.fillRect(x + pad, y + pad, cell - pad * 2, cell - pad * 2);
-        if (!bump) {
-          // fibres
-          ctx.strokeStyle = "rgba(120,80,30,0.22)";
-          ctx.lineWidth = 1;
-          for (let f = 0; f < 4; f++) {
-            ctx.beginPath();
-            const o = pad + 3 + f * ((cell - pad * 2 - 6) / 3);
-            if (horizontal) {
-              ctx.moveTo(x + pad, y + o);
-              ctx.lineTo(x + cell - pad, y + o + (r() - 0.5) * 2);
-            } else {
-              ctx.moveTo(x + o, y + pad);
-              ctx.lineTo(x + o + (r() - 0.5) * 2, y + cell - pad);
-            }
+    ctx.fillStyle = bump ? "#3a3a3a" : "#bfa56a";
+    ctx.fillRect(0, 0, W, H);
+    for (let y = 0; y < H; y += row) {
+      // each row is one braided strip: two lanes of short diagonal "stitches" (herringbone)
+      const base = tones[Math.floor(r() * tones.length)];
+      if (!bump) {
+        ctx.fillStyle = base;
+        ctx.fillRect(0, y + 2, W, row - 4);
+      }
+      const step = 10;
+      for (let lane = 0; lane < 2; lane++) {
+        const y0 = y + 3 + lane * ((row - 6) / 2);
+        const h = (row - 6) / 2;
+        for (let x = -step; x < W + step; x += step) {
+          const dir = lane === 0 ? 1 : -1;
+          if (bump) {
+            const g = ctx.createLinearGradient(x, y0, x + step, y0 + h);
+            g.addColorStop(0, "#5a5a5a");
+            g.addColorStop(0.5, "#f0f0f0");
+            g.addColorStop(1, "#5a5a5a");
+            ctx.fillStyle = g;
+          } else {
+            const t = tones[Math.floor(r() * tones.length)];
+            ctx.fillStyle = t;
+          }
+          ctx.beginPath();
+          ctx.moveTo(x, y0 + (dir > 0 ? h : 0));
+          ctx.lineTo(x + step * 0.55, y0 + (dir > 0 ? h : 0));
+          ctx.lineTo(x + step * 1.25, y0 + (dir > 0 ? 0 : h));
+          ctx.lineTo(x + step * 0.7, y0 + (dir > 0 ? 0 : h));
+          ctx.closePath();
+          ctx.fill();
+          if (!bump) {
+            ctx.strokeStyle = "rgba(150,120,60,0.28)";
+            ctx.lineWidth = 0.8;
             ctx.stroke();
           }
-          // under-strip shading at the ends
-          const sh = horizontal
-            ? ctx.createLinearGradient(x, y, x + cell, y)
-            : ctx.createLinearGradient(x, y, x, y + cell);
-          sh.addColorStop(0, "rgba(90,55,15,0.35)");
-          sh.addColorStop(0.18, "rgba(90,55,15,0)");
-          sh.addColorStop(0.82, "rgba(90,55,15,0)");
-          sh.addColorStop(1, "rgba(90,55,15,0.35)");
-          ctx.fillStyle = sh;
-          ctx.fillRect(x + pad, y + pad, cell - pad * 2, cell - pad * 2);
         }
       }
+      // seam between strips
+      ctx.fillStyle = bump ? "#111" : "rgba(140,110,55,0.55)";
+      ctx.fillRect(0, y, W, 2);
+      if (!bump) {
+        ctx.fillStyle = "rgba(255,255,255,0.18)";
+        ctx.fillRect(0, y + 2, W, 1);
+      }
     }
-    ctx.restore();
+    if (!bump) {
+      // a few loose fibre highlights so it doesn't look printed
+      for (let i = 0; i < 220; i++) {
+        ctx.strokeStyle = `rgba(255,252,240,${0.15 + r() * 0.25})`;
+        ctx.lineWidth = 0.7;
+        const x = r() * W;
+        const y = r() * H;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + 6 + r() * 8, y + (r() - 0.5) * 2);
+        ctx.stroke();
+      }
+    }
   };
   return {
-    map: canvasTex(N, N, (c) => draw(c, false)),
-    bump: canvasTex(N, N, (c) => draw(c, true), false),
+    map: canvasTex(W, H, (c) => draw(c, false)),
+    bump: canvasTex(W, H, (c) => draw(c, true), false),
   };
-}
-
-/** Black-and-straw zig-zag hat band, like the braided bands on camba hats. */
-function bandTexture() {
-  return canvasTex(512, 64, (ctx) => {
-    ctx.fillStyle = "#d8b467";
-    ctx.fillRect(0, 0, 512, 64);
-    ctx.fillStyle = "#16120e";
-    ctx.fillRect(0, 0, 512, 8);
-    ctx.fillRect(0, 56, 512, 8);
-    ctx.beginPath();
-    const step = 32;
-    ctx.moveTo(0, 50);
-    for (let x = 0; x <= 512; x += step) {
-      ctx.lineTo(x + step / 2, 14);
-      ctx.lineTo(x + step, 50);
-    }
-    ctx.lineTo(512, 50);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = "#d8b467";
-    for (let x = 0; x <= 512; x += step) {
-      ctx.beginPath();
-      ctx.moveTo(x + step / 2 - 5, 38);
-      ctx.lineTo(x + step / 2, 26);
-      ctx.lineTo(x + step / 2 + 5, 38);
-      ctx.closePath();
-      ctx.fill();
-    }
-  });
 }
 
 /** Fine cotton weave used as a bump map on the shirt and trousers. */
@@ -363,7 +374,7 @@ const smooth = (a: number, b: number, x: number) => {
 };
 
 type Gesture = "wave" | "present" | "tip" | "thumbs" | "takirari";
-const GESTURE_FOR_SLIDE: Gesture[] = ["wave", "present", "thumbs", "tip", "present"];
+const GESTURE_FOR_SLIDE: Gesture[] = ["wave", "present", "thumbs", "present", "tip"];
 const GESTURE_LEN: Record<Gesture, number> = { wave: 2.8, present: 2.4, tip: 2.6, thumbs: 2.4, takirari: 6.8 };
 /** Takirari tempo: steps per second. */
 const BEAT = 2.1;
@@ -371,7 +382,11 @@ const BEAT = 2.1;
 /* ----------------------------------------------------------------------------------------------
  * The robot
  * -------------------------------------------------------------------------------------------- */
-export function Robot({ shared }: { shared: Shared }) {
+/**
+ * `still` freezes him in a neutral pose wearing the outfit for `shared.active` (used to render the
+ * poster images in public/robot/ for devices that don't get the 3D scene).
+ */
+export function Robot({ shared, still = false }: { shared: Shared; still?: boolean }) {
   // Rig refs
   const root = useRef<THREE.Group>(null);
   const torso = useRef<THREE.Group>(null);
@@ -395,18 +410,20 @@ export function Robot({ shared }: { shared: Shared }) {
   const fingersR = useRef<Array<THREE.Group | null>>([]);
   const thumbR = useRef<THREE.Group>(null);
   const hanky = useRef<THREE.Group>(null);
+  const bubble = useRef<THREE.Group>(null);
+  const bubbleDots = useRef<Array<THREE.Mesh | null>>([]);
+  const browser = useRef<THREE.Group>(null);
+  const browserCursor = useRef<THREE.Group>(null);
 
   /* ---------- materials & textures ---------- */
   const mats = useMemo(() => {
-    const straw = strawTextures();
-    straw.map.repeat.set(10, 3);
-    straw.bump.repeat.set(10, 3);
+    const straw = plaitTextures();
+    straw.map.repeat.set(3, 1.5);
+    straw.bump.repeat.set(3, 1.5);
     const strawBrim = { map: straw.map.clone(), bump: straw.bump.clone() };
-    strawBrim.map.repeat.set(26, 2);
-    strawBrim.bump.repeat.set(26, 2);
+    strawBrim.map.repeat.set(5, 2.6);
+    strawBrim.bump.repeat.set(5, 2.6);
     strawBrim.map.needsUpdate = strawBrim.bump.needsUpdate = true;
-    const band = bandTexture();
-    band.repeat.set(3, 1);
     const cb = clothBump();
     cb.repeat.set(6, 6);
     const gourd = gourdTexture();
@@ -418,24 +435,6 @@ export function Robot({ shared }: { shared: Shared }) {
         metalness: 0,
         clearcoat: 1,
         clearcoatRoughness: 0.14,
-      }),
-      cloth: new THREE.MeshPhysicalMaterial({
-        color: C.cloth,
-        roughness: 0.92,
-        sheen: 1,
-        sheenColor: new THREE.Color("#ffffff"),
-        sheenRoughness: 0.55,
-        bumpMap: cb,
-        bumpScale: 0.6,
-      }),
-      clothShade: new THREE.MeshPhysicalMaterial({
-        color: "#e9e4d6",
-        roughness: 0.95,
-        sheen: 1,
-        sheenColor: new THREE.Color("#ffffff"),
-        sheenRoughness: 0.6,
-        bumpMap: cb,
-        bumpScale: 0.6,
       }),
       graphite: new THREE.MeshStandardMaterial({ color: C.graphite, roughness: 0.38, metalness: 0.65 }),
       steel: new THREE.MeshStandardMaterial({ color: C.steel, roughness: 0.28, metalness: 0.9 }),
@@ -462,21 +461,56 @@ export function Robot({ shared }: { shared: Shared }) {
         bumpScale: 0.4,
         side: THREE.DoubleSide,
       }),
-      straw: new THREE.MeshStandardMaterial({
+      straw: new THREE.MeshPhysicalMaterial({
         map: straw.map,
         bumpMap: straw.bump,
-        bumpScale: 2.2,
-        roughness: 0.78,
+        bumpScale: 2,
+        roughness: 0.72,
+        sheen: 0.5,
+        sheenColor: new THREE.Color("#fff6dc"),
+        sheenRoughness: 0.5,
         side: THREE.DoubleSide,
       }),
-      strawBrim: new THREE.MeshStandardMaterial({
+      strawBrim: new THREE.MeshPhysicalMaterial({
         map: strawBrim.map,
         bumpMap: strawBrim.bump,
-        bumpScale: 2.2,
-        roughness: 0.78,
+        bumpScale: 2,
+        roughness: 0.72,
+        sheen: 0.5,
+        sheenColor: new THREE.Color("#fff6dc"),
+        sheenRoughness: 0.5,
         side: THREE.DoubleSide,
       }),
-      band: new THREE.MeshStandardMaterial({ map: band, roughness: 0.7 }),
+      band: new THREE.MeshPhysicalMaterial({
+        color: "#141414",
+        roughness: 0.42,
+        sheen: 0.8,
+        sheenColor: new THREE.Color("#5a5a5a"),
+        sheenRoughness: 0.35,
+      }),
+      // Outfit-dependent cloth: colours are swapped when the outfit changes (see OUTFITS)
+      shirt: clothMat(OUTFITS[0].shirt, cb),
+      shirtShade: clothMat(shade(OUTFITS[0].shirt), cb),
+      sleeve: clothMat(OUTFITS[0].sleeve, cb),
+      sleeveShade: clothMat(shade(OUTFITS[0].sleeve), cb),
+      pants: clothMat(OUTFITS[0].pants, cb),
+      pantsShade: clothMat(shade(OUTFITS[0].pants), cb),
+      coat: clothMat("#fdfdfb", cb),
+      hoodie: clothMat("#1d2722", cb),
+      hoodieShade: clothMat("#151c18", cb),
+      vest: clothMat("#22324a", cb, 0.9),
+      apron: Object.assign(clothMat("#2c3833", cb), { side: THREE.DoubleSide }),
+      white: clothMat("#fbfbf8", cb),
+      tie: new THREE.MeshPhysicalMaterial({ color: "#078a3e", roughness: 0.4, sheen: 0.8, sheenColor: new THREE.Color("#3cff8f"), side: THREE.DoubleSide }),
+      bowtie: new THREE.MeshPhysicalMaterial({ color: "#c22b38", roughness: 0.45, sheen: 0.6, sheenColor: new THREE.Color("#ff8a95") }),
+      cap: new THREE.MeshPhysicalMaterial({ color: "#0b9e4a", roughness: 0.6, sheen: 0.25, sheenColor: new THREE.Color("#5fe39a"), side: THREE.DoubleSide }),
+      frame: new THREE.MeshPhysicalMaterial({ color: "#16110d", roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.1 }),
+      wood: new THREE.MeshStandardMaterial({ color: "#b67d48", roughness: 0.6 }),
+      bookCover: new THREE.MeshPhysicalMaterial({ color: "#7d1f2b", roughness: 0.5, clearcoat: 0.4 }),
+      paper: new THREE.MeshStandardMaterial({ color: "#f7f3e8", roughness: 0.9 }),
+      screen: new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08, transparent: true, opacity: 0.94 }),
+      line: new THREE.MeshBasicMaterial({ color: "#d6ddd9" }),
+      glowBasic: new THREE.MeshBasicMaterial({ color: C.glow, toneMapped: false }),
       leather: new THREE.MeshStandardMaterial({ color: C.leather, roughness: 0.55, metalness: 0.05 }),
       sole: new THREE.MeshStandardMaterial({ color: C.sole, roughness: 0.85 }),
       gourd: new THREE.MeshPhysicalMaterial({ map: gourd, roughness: 0.38, clearcoat: 0.7, clearcoatRoughness: 0.25 }),
@@ -511,41 +545,95 @@ export function Robot({ shared }: { shared: Shared }) {
     const TORSO: [number, number, number, number] = [0.5, 0.5, 0.36, 0.62];
     const torsoTaper = (yn: number) => 0.88 + 0.12 * ((yn + 1) / 2);
 
-    // Hat crown and brim (lathe profiles)
+    // Sombrero de paja: a creased crown (centre dent front-to-back, pinched at the front) on a
+    // flat, wide brim that dips a little at the front and lifts at the back. Lathe-built so the
+    // plait texture wraps it in concentric rings, like the spiral-sewn braid of a real hat.
     const crown = new THREE.LatheGeometry(
       [
-        new THREE.Vector2(0.0, 0.56),
-        new THREE.Vector2(0.18, 0.57),
-        new THREE.Vector2(0.34, 0.555),
-        new THREE.Vector2(0.46, 0.51),
-        new THREE.Vector2(0.54, 0.42),
-        new THREE.Vector2(0.58, 0.26),
-        new THREE.Vector2(0.6, 0.1),
-        new THREE.Vector2(0.62, 0.0),
+        new THREE.Vector2(0.0, 0.5),
+        new THREE.Vector2(0.14, 0.505),
+        new THREE.Vector2(0.3, 0.5),
+        new THREE.Vector2(0.42, 0.47),
+        new THREE.Vector2(0.5, 0.4),
+        new THREE.Vector2(0.55, 0.28),
+        new THREE.Vector2(0.58, 0.14),
+        new THREE.Vector2(0.6, 0.0),
       ],
-      72,
+      96,
     );
-    crown.computeVertexNormals();
+    {
+      const p = crown.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < p.count; i++) {
+        let x = p.getX(i);
+        let y = p.getY(i);
+        const z = p.getZ(i);
+        const top = smooth(0.26, 0.5, y);
+        // centre crease running front to back
+        y -= 0.12 * Math.exp(-Math.pow(x / 0.16, 2)) * top * (1 - 0.35 * Math.pow(Math.abs(z) / 0.5, 2));
+        // pinches either side of the front
+        const front = Math.max(0, z / 0.5);
+        x *= 1 - 0.16 * top * front * front;
+        p.setXYZ(i, x, y, z);
+      }
+      crown.computeVertexNormals();
+    }
     const brimPts: THREE.Vector2[] = [];
-    // top surface from crown out to the rolled edge, then underside back in
-    const outer = 1.28;
-    const steps = 18;
+    const inner = 0.58;
+    const outer = 1.18;
+    const steps = 20;
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      const r = 0.6 + (outer - 0.6) * t;
-      const y = -0.02 - Math.sin(t * Math.PI) * 0.06 + Math.pow(t, 6) * 0.08;
-      brimPts.push(new THREE.Vector2(r, y));
+      brimPts.push(new THREE.Vector2(inner + (outer - inner) * t, -0.01 + Math.pow(t, 5) * 0.035));
     }
-    brimPts.push(new THREE.Vector2(outer + 0.025, 0.1));
-    brimPts.push(new THREE.Vector2(outer + 0.01, 0.075));
+    brimPts.push(new THREE.Vector2(outer + 0.018, 0.022));
+    brimPts.push(new THREE.Vector2(outer + 0.01, 0.0));
     for (let i = steps; i >= 0; i--) {
       const t = i / steps;
-      const r = 0.6 + (outer - 0.6) * t;
-      const y = -0.045 - Math.sin(t * Math.PI) * 0.06 + Math.pow(t, 6) * 0.08;
-      brimPts.push(new THREE.Vector2(r, y));
+      brimPts.push(new THREE.Vector2(inner + (outer - inner) * t, -0.035 + Math.pow(t, 5) * 0.035));
     }
-    const brim = new THREE.LatheGeometry(brimPts, 96);
-    brim.computeVertexNormals();
+    const brim = new THREE.LatheGeometry(brimPts, 128);
+    {
+      const p = brim.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i);
+        const z = p.getZ(i);
+        const r = Math.hypot(x, z);
+        const t = Math.max(0, (r - inner) / (outer - inner));
+        // snap-brim: down at the front, up at the back, a soft lift at the sides
+        const dy = (-z / r) * 0.09 * t * t + Math.pow(x / r, 2) * 0.04 * t * t;
+        p.setY(i, p.getY(i) + dy);
+      }
+      brim.computeVertexNormals();
+    }
+
+    // Chef's toque: pleated tube + puffed top
+    const toqueBody = new THREE.CylinderGeometry(0.86, 0.8, 0.5, 96, 6, true);
+    {
+      const p = toqueBody.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i);
+        const z = p.getZ(i);
+        const a = Math.atan2(z, x);
+        const k = 1 + 0.035 * Math.cos(a * 18);
+        p.setX(i, x * k);
+        p.setZ(i, z * k);
+      }
+      toqueBody.computeVertexNormals();
+    }
+    const toqueTop = superEllipsoid(0.95, 0.34, 0.95, 0.75, undefined, [72, 32]);
+    {
+      const p = toqueTop.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i);
+        const y = p.getY(i);
+        const z = p.getZ(i);
+        const a = Math.atan2(z, x);
+        const r = Math.hypot(x, z) / 0.95;
+        const k = 1 + 0.05 * Math.cos(a * 9) * r;
+        p.setXYZ(i, x * k, y + 0.04 * Math.cos(a * 9) * r * Math.max(0, y), z * k);
+      }
+      toqueTop.computeVertexNormals();
+    }
 
     // Neckerchief: triangle draped on the chest, made from a bent plane
     // A plane reshaped into a triangle that narrows to a point, bulging over the chest.
@@ -563,6 +651,45 @@ export function Robot({ shared }: { shared: Shared }) {
     }
 
     const TY = 0.3; // torso centre y in chest space
+    const surfZTorso = (x: number, y: number) => {
+      const yn = Math.max(-1, Math.min(1, (y - TY) / TORSO[1]));
+      const k = torsoTaper(yn);
+      return surfZ(x, y - TY, TORSO[0] * k, TORSO[1], TORSO[2] * (0.5 + k * 0.5), TORSO[3]);
+    };
+    /** A flat patch that hugs the shirt front: shape(u, t) → [x, y] with u in -1..1, t in 0..1. */
+    const patch = (shape: (u: number, t: number) => [number, number], off: number, sx = 1, sz = 1, seg: [number, number] = [8, 20]) => {
+      const g = new THREE.PlaneGeometry(1, 1, seg[0], seg[1]);
+      const p = g.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < p.count; i++) {
+        const u = p.getX(i) * 2;
+        const t = 0.5 - p.getY(i);
+        const [x, y] = shape(u, t);
+        p.setXYZ(i, x, y, surfZTorso(x / sx, y) * sz + off);
+      }
+      g.computeVertexNormals();
+      return g;
+    };
+    // Tie: narrow under the knot, widening, then the pointed tip
+    const tie = patch((u, t) => {
+      let w = 0.03 + 0.05 * t;
+      if (t > 0.86) w *= Math.max(0, (1 - t) / 0.14);
+      return [u * w, 0.72 - t * 0.6];
+    }, 0.014);
+    // V-neck of the sweater vest, showing the shirt underneath
+    const vneck = patch((u, t) => [u * 0.17 * (1 - t), 0.8 - t * 0.32], 0.012, 1.05, 1.08);
+    // Hoodie kangaroo pocket
+    const kanga = patch((u, t) => [u * (0.2 + t * 0.06), 0.24 - t * 0.2], 0.012, 1.05, 1.08, [8, 6]);
+    // Apron hanging from the waist over the trousers
+    const apron = new THREE.PlaneGeometry(1, 1, 16, 10);
+    {
+      const p = apron.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < p.count; i++) {
+        const u = p.getX(i) * 2;
+        const t = 0.5 - p.getY(i);
+        p.setXYZ(i, u * 0.4 * (1 + 0.12 * t), -0.04 - t * 0.98, 0.35 - 0.07 * t + 0.05 * Math.cos((u * Math.PI) / 2));
+      }
+      apron.computeVertexNormals();
+    }
 
     // Tari gourd: round belly, waist, small upper bulb and a narrow mouth (lathe profile)
     const gourdPts: THREE.Vector2[] = [];
@@ -607,12 +734,44 @@ export function Robot({ shared }: { shared: Shared }) {
       pocket: superEllipsoid(0.11, 0.12, 0.01, 0.25, undefined, [24, 12]),
       crown,
       brim,
+      toqueBody,
+      toqueTop,
       tri,
-      surfZTorso: (x: number, y: number) => {
-        const yn = Math.max(-1, Math.min(1, (y - TY) / TORSO[1]));
-        const k = torsoTaper(yn);
-        return surfZ(x, y - TY, TORSO[0] * k, TORSO[1], TORSO[2] * (0.5 + k * 0.5), TORSO[3]);
-      },
+      tie,
+      vneck,
+      kanga,
+      apron,
+      mic: new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-0.95, -0.06, 0.06),
+          new THREE.Vector3(-0.9, -0.3, 0.4),
+          new THREE.Vector3(-0.58, -0.46, 0.68),
+          new THREE.Vector3(-0.3, -0.47, 0.76),
+        ]),
+        32,
+        0.018,
+        8,
+        false,
+      ),
+      temples: [-1, 1].map(
+        (side) =>
+          new THREE.TubeGeometry(
+            new THREE.CatmullRomCurve3([
+              new THREE.Vector3(side * 0.35, 0.0, 0.75),
+              new THREE.Vector3(side * 0.6, 0.0, 0.71),
+              new THREE.Vector3(side * 0.76, 0.0, 0.5),
+              new THREE.Vector3(side * 0.84, 0.0, 0.2),
+            ]),
+            24,
+            0.016,
+            8,
+            false,
+          ),
+      ),
+      bubble: superEllipsoid(0.34, 0.22, 0.07, 0.35, undefined, [40, 24]),
+      browser: superEllipsoid(0.52, 0.36, 0.03, 0.22, undefined, [40, 24]),
+      spoonBowl: superEllipsoid(0.07, 0.1, 0.025, 0.8, undefined, [20, 14]),
+      surfZTorso,
       TY,
     };
   }, []);
@@ -624,6 +783,7 @@ export function Robot({ shared }: { shared: Shared }) {
       Object.values(mats).forEach((m) => m.dispose());
       Object.values(geo).forEach((g) => {
         if (g instanceof THREE.BufferGeometry) g.dispose();
+        if (Array.isArray(g)) g.forEach((x) => (x as THREE.BufferGeometry).dispose());
       });
     },
     [face, faceMat, mats, geo],
@@ -642,7 +802,37 @@ export function Robot({ shared }: { shared: Shared }) {
     j: {} as Record<string, number>,
     nextDance: 14 + Math.random() * 8, // first takirari after ~15–22 s, then every 25–40 s
     pendingDance: false,
+    outfit: -1,
+    targetOutfit: 0,
+    swapT: SWAP,
+    parts: null as THREE.Object3D[] | null,
   });
+
+  const applyOutfit = (n: number) => {
+    const s = st.current;
+    s.outfit = n;
+    if (!s.parts && root.current) {
+      const found: THREE.Object3D[] = [];
+      root.current.traverse((o) => {
+        if (Array.isArray(o.userData.outfits)) found.push(o);
+      });
+      s.parts = found;
+    }
+    s.parts?.forEach((o) => {
+      o.visible = (o.userData.outfits as number[]).includes(n);
+    });
+    const o = OUTFITS[n] ?? OUTFITS[0];
+    const paint = (m: THREE.MeshPhysicalMaterial, hex: string) => {
+      m.color.set(hex);
+      m.sheenColor.set(hex).lerp(new THREE.Color("#ffffff"), 0.6);
+    };
+    paint(mats.shirt, o.shirt);
+    paint(mats.shirtShade, shade(o.shirt));
+    paint(mats.sleeve, o.sleeve);
+    paint(mats.sleeveShade, shade(o.sleeve));
+    paint(mats.pants, o.pants);
+    paint(mats.pantsShade, shade(o.pants));
+  };
 
   const dance = () => {
     st.current.pendingDance = true;
@@ -656,13 +846,39 @@ export function Robot({ shared }: { shared: Shared }) {
 
     s.gT += dt;
     const dancing = s.gesture === "takirari" && s.gT < GESTURE_LEN.takirari;
-    // New slide → new gesture (a takirari in progress is never cut short)
+    // New slide → spin into the new outfit, then the slide's gesture
+    // (a takirari in progress is never cut short)
     if (shared.active !== s.lastSlide) {
+      const first = s.lastSlide === -1;
       s.lastSlide = shared.active;
+      s.targetOutfit = shared.active;
+      if (first || still) {
+        applyOutfit(s.targetOutfit);
+        s.swapT = SWAP;
+      } else {
+        s.swapT = 0;
+      }
       if (!dancing) {
         s.gesture = GESTURE_FOR_SLIDE[shared.active] ?? "present";
-        s.gT = 0;
+        s.gT = first ? 0 : -SWAP * 0.75;
       }
+    }
+    if (still) {
+      s.gT = 99;
+      s.nextDance = 99;
+      s.pendingDance = false;
+    }
+    // Outfit swap: a quick hop-and-spin; the clothes change while he faces away
+    s.swapT += dt;
+    let spin = 0;
+    let hop = 0;
+    if (s.swapT < SWAP) {
+      const p = s.swapT / SWAP;
+      spin = (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2) * Math.PI * 2;
+      hop = Math.sin(p * Math.PI) * 0.16;
+      if (p >= 0.5 && s.outfit !== s.targetOutfit) applyOutfit(s.targetOutfit);
+    } else if (s.outfit !== s.targetOutfit) {
+      applyOutfit(s.targetOutfit);
     }
     // Every now and then (or when clicked) he breaks into a takirari
     s.nextDance -= dt;
@@ -688,8 +904,8 @@ export function Robot({ shared }: { shared: Shared }) {
     const sway = Math.sin(t * 0.55);
 
     // Pointer look (head turns, eyes lead a little)
-    const px = THREE.MathUtils.clamp(shared.pointer.x, -1, 1);
-    const py = THREE.MathUtils.clamp(shared.pointer.y, -1, 1);
+    const px = still ? 0 : THREE.MathUtils.clamp(shared.pointer.x, -1, 1);
+    const py = still ? 0.1 : THREE.MathUtils.clamp(shared.pointer.y, -1, 1);
     s.look.x = damp(s.look.x, px, 3.2, dt);
     s.look.y = damp(s.look.y, py, 3.2, dt);
     s.eye.x = damp(s.eye.x, px, 9, dt);
@@ -827,8 +1043,8 @@ export function Robot({ shared }: { shared: Shared }) {
     }
 
     if (root.current) {
-      root.current.position.set(cur.rootX, cur.rootY + cur.bounce, 0);
-      root.current.rotation.y = cur.rootRY;
+      root.current.position.set(cur.rootX, cur.rootY + cur.bounce + hop, 0);
+      root.current.rotation.y = cur.rootRY + spin;
     }
     fingersR.current.forEach((f, i) => {
       if (f) f.rotation.set(0.35 + cur.curl * 1.9, 0, (i - 1) * -0.08);
@@ -836,6 +1052,23 @@ export function Robot({ shared }: { shared: Shared }) {
     if (thumbR.current) {
       thumbR.current.rotation.set(0.6 - cur.thumbUp * 0.75, 0, -0.7 + cur.thumbUp * 0.75);
       thumbR.current.scale.set(1 + cur.thumbUp * 0.3, 1 + cur.thumbUp * 0.4, 1 + cur.thumbUp * 0.3);
+    }
+    // Floating props: chat bubble (AI) and browser window (web) bob beside him
+    if (bubble.current) {
+      bubble.current.position.y = 2.55 + Math.sin(t * 1.4) * 0.06;
+      bubble.current.rotation.z = Math.sin(t * 1.1) * 0.04;
+    }
+    bubbleDots.current.forEach((d, i) => {
+      if (d) d.position.y = Math.max(0, Math.sin(t * 6 - i * 0.9)) * 0.05;
+    });
+    if (browser.current) {
+      browser.current.position.y = 1.75 + Math.sin(t * 1.2 + 1) * 0.07;
+      browser.current.rotation.y = -0.42 + Math.sin(t * 0.7) * 0.05;
+    }
+    if (browserCursor.current) {
+      const c = (t * 0.5) % 1;
+      browserCursor.current.position.set(-0.15 + smooth(0, 0.5, c) * 0.32, 0.05 - smooth(0, 0.5, c) * 0.2, 0.06);
+      browserCursor.current.scale.setScalar(c > 0.55 && c < 0.65 ? 0.8 : 1);
     }
     if (hanky.current) {
       const h = cur.hanky;
@@ -918,6 +1151,59 @@ export function Robot({ shared }: { shared: Shared }) {
       onPointerOver={() => (document.body.style.cursor = "pointer")}
       onPointerOut={() => (document.body.style.cursor = "")}
     >
+      {/* AI receptionist: chat bubble with typing dots */}
+      <group ref={bubble} position={[1.25, 2.55, 0.25]} userData={only(1)}>
+        <mesh geometry={geo.bubble} material={mats.screen} />
+        <mesh position={[-0.2, -0.24, 0]} rotation={[0, 0, -0.6]} material={mats.screen}>
+          <coneGeometry args={[0.07, 0.14, 12]} />
+        </mesh>
+        {[0, 1, 2].map((i) => (
+          <group key={i} position={[(i - 1) * 0.13, 0, 0.07]}>
+            <mesh
+              ref={(el) => {
+                bubbleDots.current[i] = el;
+              }}
+              material={mats.glowBasic}
+            >
+              <sphereGeometry args={[0.042, 16, 12]} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+
+      {/* Web designer: floating browser window with a cursor clicking the call to action */}
+      <group ref={browser} position={[1.45, 1.75, 0.15]} rotation={[0, -0.42, 0]} userData={only(2)}>
+        <mesh geometry={geo.browser} material={mats.screen} />
+        <mesh position={[0, 0.3, 0.031]} material={mats.line}>
+          <boxGeometry args={[1.02, 0.1, 0.004]} />
+        </mesh>
+        {["#ff5f57", "#febc2e", "#28c840"].map((c, i) => (
+          <mesh key={c} position={[-0.44 + i * 0.06, 0.3, 0.036]}>
+            <circleGeometry args={[0.018, 16]} />
+            <meshBasicMaterial color={c} />
+          </mesh>
+        ))}
+        <mesh position={[-0.17, 0.14, 0.033]} material={mats.graphite}>
+          <boxGeometry args={[0.56, 0.06, 0.004]} />
+        </mesh>
+        <mesh position={[-0.24, 0.05, 0.033]} material={mats.line}>
+          <boxGeometry args={[0.42, 0.03, 0.004]} />
+        </mesh>
+        <mesh position={[-0.33, -0.05, 0.034]} material={mats.glowBasic}>
+          <boxGeometry args={[0.22, 0.075, 0.004]} />
+        </mesh>
+        {[-1, 0, 1].map((i) => (
+          <mesh key={i} position={[i * 0.32, -0.22, 0.033]} material={mats.line}>
+            <boxGeometry args={[0.28, 0.15, 0.004]} />
+          </mesh>
+        ))}
+        <group ref={browserCursor} position={[0, 0, 0.06]}>
+          <mesh rotation={[0, 0, 0.5]} position={[0, -0.03, 0]} material={mats.graphite}>
+            <coneGeometry args={[0.03, 0.08, 3]} />
+          </mesh>
+        </group>
+      </group>
+
       {/* soft contact shadow */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.13, 0.05]} material={mats.shadow}>
         <planeGeometry args={[2.4, 1.3]} />
@@ -927,25 +1213,25 @@ export function Robot({ shared }: { shared: Shared }) {
       {[-1, 1].map((side) => (
         <group key={side} ref={side < 0 ? hipR : hipL} position={[side * hipX, hipY, 0]}>
           {/* trouser leg, rolled up just below the knee */}
-          <mesh position={[0, -0.5, 0]} material={mats.cloth}>
+          <mesh position={[0, -0.5, 0]} material={mats.pants}>
             <cylinderGeometry args={[0.2, 0.175, 1.0, 32, 1, true]} />
           </mesh>
-          <mesh position={[0, -0.15, 0]} material={mats.cloth}>
+          <mesh position={[0, -0.15, 0]} material={mats.pants}>
             <sphereGeometry args={[0.2, 32, 16]} />
           </mesh>
           {/* crease down the front */}
-          <mesh position={[0, -0.55, 0.188]} rotation={[0.025, 0, 0]} material={mats.clothShade}>
+          <mesh position={[0, -0.55, 0.188]} rotation={[0.025, 0, 0]} material={mats.pantsShade}>
             <boxGeometry args={[0.012, 0.8, 0.01]} />
           </mesh>
           <group ref={side < 0 ? kneeR : kneeL} position={[0, -0.92, 0]}>
             {/* rolled cuff */}
-            <mesh position={[0, -0.12, 0]} material={mats.cloth}>
+            <mesh position={[0, -0.12, 0]} material={mats.pants}>
               <cylinderGeometry args={[0.178, 0.172, 0.24, 32, 1, true]} />
             </mesh>
-            <mesh position={[0, -0.04, 0]} rotation={[Math.PI / 2, 0, 0]} material={mats.clothShade}>
+            <mesh position={[0, -0.04, 0]} rotation={[Math.PI / 2, 0, 0]} material={mats.pantsShade}>
               <torusGeometry args={[0.18, 0.026, 12, 40]} />
             </mesh>
-            <mesh position={[0, -0.21, 0]} rotation={[Math.PI / 2, 0, 0]} material={mats.clothShade}>
+            <mesh position={[0, -0.21, 0]} rotation={[Math.PI / 2, 0, 0]} material={mats.pantsShade}>
               <torusGeometry args={[0.178, 0.034, 12, 40]} />
             </mesh>
             <mesh position={[0, -0.23, 0]} rotation={[Math.PI / 2, 0, 0]} material={mats.graphite}>
@@ -998,21 +1284,27 @@ export function Robot({ shared }: { shared: Shared }) {
       {/* -------------------- TORSO -------------------- */}
       <group ref={torso}>
         {/* trousers top / seat */}
-        <mesh position={[0, -0.18, 0]} material={mats.cloth} geometry={geo.pelvis} />
+        <mesh position={[0, -0.18, 0]} material={mats.pants} geometry={geo.pelvis} />
         {/* belt */}
-        <mesh position={[0, -0.02, 0]} material={mats.clothShade} geometry={geo.belt} />
+        <mesh position={[0, -0.02, 0]} material={mats.pantsShade} geometry={geo.belt} />
         <mesh position={[0, -0.02, 0.335]} material={mats.steel}>
           <boxGeometry args={[0.1, 0.075, 0.02]} />
         </mesh>
-        <mesh position={[0, -0.02, 0.34]} material={mats.clothShade}>
+        <mesh position={[0, -0.02, 0.34]} material={mats.pantsShade}>
           <boxGeometry args={[0.06, 0.04, 0.02]} />
         </mesh>
+        {/* chef's apron */}
+        <group userData={only(4)}>
+          <mesh geometry={geo.apron} material={mats.apron} />
+          <mesh position={[0, -0.02, 0]} scale={[1.03, 1.15, 1.03]} material={mats.apron} geometry={geo.belt} />
+        </group>
 
         <group ref={chest}>
           {/* shirt body */}
-          <mesh position={[0, TY, 0]} material={mats.cloth} geometry={geo.torso} />
-          {/* placket + buttons */}
-          <mesh position={[0, 0.2, btnZ(0.2) - 0.006]} material={mats.clothShade}>
+          <mesh position={[0, TY, 0]} material={mats.shirt} geometry={geo.torso} />
+          {/* placket, buttons and chest pocket (hidden under vest / hoodie / chef coat) */}
+          <group userData={only(0, 1)}>
+          <mesh position={[0, 0.2, btnZ(0.2) - 0.006]} material={mats.shirtShade}>
             <boxGeometry args={[0.06, 0.42, 0.008]} />
           </mesh>
           {buttonYs.map((y) => (
@@ -1022,22 +1314,102 @@ export function Robot({ shared }: { shared: Shared }) {
           ))}
           {/* chest pocket */}
           <group position={[0.22, 0.44, pocketZ - 0.002]} rotation={[-0.15, 0.32, 0]}>
-            <mesh material={mats.clothShade} geometry={geo.pocket} />
-            <mesh position={[0, 0.1, 0.012]} material={mats.cloth}>
+            <mesh material={mats.shirtShade} geometry={geo.pocket} />
+            <mesh position={[0, 0.1, 0.012]} material={mats.shirt}>
               <boxGeometry args={[0.23, 0.05, 0.012]} />
             </mesh>
           </group>
+          </group>
           {/* collar */}
-          {[-1, 1].map((side) => (
-            <mesh
-              key={side}
-              position={[side * 0.15, 0.78, 0.2]}
-              rotation={[-0.75, side * 0.45, side * -0.5]}
-              material={mats.cloth}
-            >
-              <boxGeometry args={[0.2, 0.15, 0.018]} />
+          <group userData={only(0, 1, 3)}>
+            {[-1, 1].map((side) => (
+              <mesh
+                key={side}
+                position={[side * 0.15, 0.78, 0.2]}
+                rotation={[-0.75, side * 0.45, side * -0.5]}
+                material={mats.shirt}
+              >
+                <boxGeometry args={[0.2, 0.15, 0.018]} />
+              </mesh>
+            ))}
+          </group>
+
+          {/* -------- AI receptionist: green tie + name badge -------- */}
+          <group userData={only(1)}>
+            <mesh geometry={geo.tie} material={mats.tie} />
+            <mesh position={[0, 0.75, geo.surfZTorso(0, 0.75) + 0.035]} material={mats.tie} scale={[1, 0.85, 0.7]}>
+              <sphereGeometry args={[0.052, 20, 14]} />
             </mesh>
-          ))}
+            <group position={[0.235, 0.47, pocketZ + 0.03]} rotation={[-0.15, 0.32, 0]}>
+              <mesh material={mats.white}>
+                <boxGeometry args={[0.18, 0.11, 0.012]} />
+              </mesh>
+              <mesh position={[0, 0.034, 0.007]} material={mats.accent}>
+                <boxGeometry args={[0.18, 0.03, 0.004]} />
+              </mesh>
+              <mesh position={[-0.025, -0.015, 0.007]} material={mats.graphite}>
+                <boxGeometry args={[0.09, 0.014, 0.003]} />
+              </mesh>
+              <mesh position={[-0.04, -0.037, 0.007]} material={mats.steel}>
+                <boxGeometry args={[0.06, 0.01, 0.003]} />
+              </mesh>
+            </group>
+          </group>
+
+          {/* -------- Web designer: hoodie with kangaroo pocket + drawstrings -------- */}
+          <group userData={only(2)}>
+            <mesh position={[0, TY, 0]} scale={[1.05, 1.0, 1.08]} material={mats.hoodie} geometry={geo.torso} />
+            <mesh geometry={geo.kanga} material={mats.hoodieShade} />
+            <mesh position={[0, 0.84, -0.08]} rotation={[Math.PI / 2 + 0.6, 0, 0]} material={mats.hoodie} scale={[1.12, 1, 1]}>
+              <torusGeometry args={[0.23, 0.1, 16, 40]} />
+            </mesh>
+            {[-1, 1].map((side) => (
+              <group key={side} position={[side * 0.09, 0.66, geo.surfZTorso(side * 0.086, 0.7) * 1.08 + 0.02]}>
+                <mesh material={mats.white}>
+                  <cylinderGeometry args={[0.009, 0.009, 0.22, 8]} />
+                </mesh>
+                <mesh position={[0, -0.12, 0]} material={mats.accent}>
+                  <cylinderGeometry args={[0.014, 0.014, 0.04, 10]} />
+                </mesh>
+              </group>
+            ))}
+          </group>
+
+          {/* -------- Teacher: sweater vest, V-neck, bow tie -------- */}
+          <group userData={only(3)}>
+            <mesh position={[0, TY + 0.02, 0]} scale={[1.045, 0.97, 1.075]} material={mats.vest} geometry={geo.torso} />
+            <mesh geometry={geo.vneck} material={mats.shirt} />
+            <group position={[0, 0.76, geo.surfZTorso(0, 0.76) + 0.075]}>
+              {[-1, 1].map((side) => (
+                <mesh key={side} position={[side * 0.062, 0, 0]} rotation={[0, 0, side * (Math.PI / 2)]} material={mats.bowtie} scale={[1, 1, 0.5]}>
+                  <coneGeometry args={[0.058, 0.12, 4]} />
+                </mesh>
+              ))}
+              <mesh material={mats.bowtie}>
+                <sphereGeometry args={[0.032, 16, 12]} />
+              </mesh>
+            </group>
+          </group>
+
+          {/* -------- Chef: double-breasted coat with mandarin collar -------- */}
+          <group userData={only(4)}>
+            <mesh position={[0, TY, 0]} scale={[1.05, 1.0, 1.08]} material={mats.coat} geometry={geo.torso} />
+            <mesh position={[0, 0.82, 0]} material={mats.coat}>
+              <cylinderGeometry args={[0.22, 0.28, 0.13, 40, 1, true]} />
+            </mesh>
+            {[-1, 1].flatMap((side) =>
+              [0.62, 0.43, 0.24].map((y) => (
+                <mesh
+                  key={`${side}${y}`}
+                  position={[side * 0.13, y, geo.surfZTorso((side * 0.13) / 1.05, y) * 1.08 + 0.008]}
+                  rotation={[Math.PI / 2, 0, 0]}
+                  material={mats.graphite}
+                >
+                  <cylinderGeometry args={[0.022, 0.022, 0.014, 16]} />
+                </mesh>
+              )),
+            )}
+          </group>
 
           {/* neck */}
           <group position={[0, 0.92, 0]}>
@@ -1052,7 +1424,7 @@ export function Robot({ shared }: { shared: Shared }) {
           </group>
 
           {/* green neckerchief: rolled band around the neck, knot, triangle and two tails */}
-          <group position={[0, 0.84, 0]}>
+          <group position={[0, 0.84, 0]} userData={only(0)}>
             <mesh rotation={[Math.PI / 2 + 0.22, 0, 0]} material={mats.scarf} scale={[1.05, 0.92, 1]}>
               <torusGeometry args={[0.21, 0.055, 16, 48]} />
             </mesh>
@@ -1085,13 +1457,13 @@ export function Robot({ shared }: { shared: Shared }) {
               position={[side * shoulderX, shoulderY, 0]}
             >
               {/* shoulder + short rolled sleeve */}
-              <mesh material={mats.cloth} position={[0, -0.02, 0]}>
+              <mesh material={mats.sleeve} position={[0, -0.02, 0]}>
                 <sphereGeometry args={[0.165, 32, 20]} />
               </mesh>
-              <mesh material={mats.cloth} position={[0, -0.25, 0]}>
+              <mesh material={mats.sleeve} position={[0, -0.25, 0]}>
                 <cylinderGeometry args={[0.16, 0.14, 0.46, 32, 1, true]} />
               </mesh>
-              <mesh material={mats.clothShade} position={[0, -0.47, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <mesh material={mats.sleeveShade} position={[0, -0.47, 0]} rotation={[Math.PI / 2, 0, 0]}>
                 <torusGeometry args={[0.142, 0.032, 12, 36]} />
               </mesh>
               <mesh material={mats.graphite} position={[0, -0.49, 0]} rotation={[Math.PI / 2, 0, 0]}>
@@ -1142,6 +1514,32 @@ export function Robot({ shared }: { shared: Shared }) {
                     </mesh>
                   </group>
                   {side < 0 && (
+                    <group userData={only(4)} position={[0, -0.14, 0.03]} rotation={[-Math.PI / 2 + 0.35, 0, 0]}>
+                      <mesh material={mats.wood} position={[0, -0.06, 0]}>
+                        <cylinderGeometry args={[0.014, 0.017, 0.34, 10]} />
+                      </mesh>
+                      <mesh material={mats.wood} geometry={geo.spoonBowl} position={[0, -0.28, 0]} />
+                    </group>
+                  )}
+                  {side > 0 && (
+                    <group userData={only(3)} position={[0.01, -0.2, 0.02]} rotation={[0, Math.PI / 2 - 0.5, 0.08]}>
+                      <mesh material={mats.paper}>
+                        <boxGeometry args={[0.2, 0.27, 0.05]} />
+                      </mesh>
+                      {[-1, 1].map((f) => (
+                        <mesh key={f} material={mats.bookCover} position={[0.005, 0, f * 0.029]}>
+                          <boxGeometry args={[0.215, 0.285, 0.009]} />
+                        </mesh>
+                      ))}
+                      <mesh material={mats.bookCover} position={[-0.104, 0, 0]}>
+                        <boxGeometry args={[0.012, 0.285, 0.066]} />
+                      </mesh>
+                      <mesh material={mats.accent} position={[0.01, 0.06, 0.034]}>
+                        <boxGeometry args={[0.12, 0.02, 0.002]} />
+                      </mesh>
+                    </group>
+                  )}
+                  {side < 0 && (
                     <group ref={hanky} position={[0, -0.2, 0.02]} scale={0}>
                       <mesh geometry={geo.tri} material={mats.scarf} rotation={[0, 0, Math.PI]} position={[0, -0.02, 0]} scale={[0.75, 0.9, 1]} />
                     </group>
@@ -1186,6 +1584,36 @@ export function Robot({ shared }: { shared: Shared }) {
                 </mesh>
               </group>
             ))}
+            {/* AI receptionist headset */}
+            <group userData={only(1)}>
+              <mesh position={[0, -0.02, 0]} scale={[1, 0.86, 1]} material={mats.graphite}>
+                <torusGeometry args={[0.95, 0.035, 12, 72, Math.PI]} />
+              </mesh>
+              {[-1, 1].map((side) => (
+                <mesh key={side} position={[side * 0.95, -0.04, 0]} rotation={[0, 0, Math.PI / 2]} material={mats.graphite}>
+                  <cylinderGeometry args={[0.17, 0.17, 0.09, 32]} />
+                </mesh>
+              ))}
+              <mesh geometry={geo.mic} material={mats.graphite} />
+              <mesh position={[-0.3, -0.47, 0.76]} material={mats.accent}>
+                <sphereGeometry args={[0.048, 16, 12]} />
+              </mesh>
+            </group>
+            {/* teacher's glasses */}
+            <group userData={only(3)}>
+              {[-1, 1].map((side) => (
+                <mesh key={side} position={[side * 0.2, -0.0, 0.75]} material={mats.frame}>
+                  <torusGeometry args={[0.15, 0.022, 12, 40]} />
+                </mesh>
+              ))}
+              <mesh position={[0, 0.03, 0.75]} rotation={[0, 0, Math.PI / 2]} material={mats.frame}>
+                <cylinderGeometry args={[0.014, 0.014, 0.12, 8]} />
+              </mesh>
+              {geo.temples.map((g, i) => (
+                <mesh key={i} geometry={g} material={mats.frame} />
+              ))}
+            </group>
+
             {/* side antenna */}
             <group position={[-(HEAD[0] + 0.1), 0.02, -0.02]} rotation={[0, 0, 0.95]}>
               <mesh material={mats.steel} position={[0, 0.2, 0]}>
@@ -1197,23 +1625,46 @@ export function Robot({ shared }: { shared: Shared }) {
               </mesh>
             </group>
 
-            {/* -------------------- SOMBRERO DE SAÓ -------------------- */}
-            <group ref={hat} position={[0, 0.56, -0.03]} rotation={[0.05, 0, -0.06]} scale={1.13}>
-              <mesh geometry={geo.crown} material={mats.straw} />
-              <mesh geometry={geo.brim} material={mats.strawBrim} />
-              <mesh position={[0, 0.09, 0]} material={mats.band}>
-                <cylinderGeometry args={[0.6, 0.625, 0.15, 72, 1, true]} />
-              </mesh>
-              {/* little tie on the band */}
-              <mesh position={[0.57, 0.09, 0.22]} rotation={[0, 0.36, 0]} material={mats.band}>
-                <boxGeometry args={[0.03, 0.15, 0.1]} />
-              </mesh>
+            {/* -------------------- HEADWEAR (lifted together by the hat-tip gesture) -------------------- */}
+            <group ref={hat} position={[0, 0.56, -0.03]} rotation={[0.05, 0, -0.06]}>
+              {/* Sombrero de paja (camba) */}
+              <group userData={only(0)} scale={1.13}>
+                <mesh geometry={geo.crown} material={mats.straw} />
+                <mesh geometry={geo.brim} material={mats.strawBrim} />
+                <mesh position={[0, 0.055, 0]} material={mats.band}>
+                  <cylinderGeometry args={[0.585, 0.602, 0.1, 96, 1, true]} />
+                </mesh>
+                {/* flat bow on the left side of the band */}
+                <mesh position={[0.555, 0.06, -0.2]} rotation={[0, -0.34 + Math.PI / 2, 0]} material={mats.band}>
+                  <boxGeometry args={[0.14, 0.07, 0.025]} />
+                </mesh>
+              </group>
+              {/* Backwards cap (web designer) */}
+              <group userData={only(2)} position={[0, -0.11, 0.03]} rotation={[-0.05, 1.9, 0.06]}>
+                <mesh scale={[1, 0.46, 0.84]} material={mats.cap}>
+                  <sphereGeometry args={[0.78, 56, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
+                </mesh>
+                <mesh position={[0, 0.36, 0]} material={mats.cap}>
+                  <sphereGeometry args={[0.05, 16, 10]} />
+                </mesh>
+                <mesh position={[0, 0.02, -0.55]} rotation={[0.15, 0, 0]} material={mats.cap}>
+                  <cylinderGeometry args={[0.42, 0.42, 0.025, 40, 1, false, Math.PI / 2, Math.PI]} />
+                </mesh>
+              </group>
+              {/* Toque (chef) */}
+              <group userData={only(4)} position={[0, -0.21, 0.03]} rotation={[-0.05, 0, 0.06]} scale={0.92}>
+                <mesh position={[0, 0.08, 0]} scale={[1, 1, 0.84]} material={mats.coat}>
+                  <cylinderGeometry args={[0.81, 0.8, 0.16, 72, 1, true]} />
+                </mesh>
+                <mesh position={[0, 0.41, 0]} scale={[1, 1, 0.86]} geometry={geo.toqueBody} material={mats.coat} />
+                <mesh position={[0, 0.7, 0]} scale={[1, 1, 0.9]} geometry={geo.toqueTop} material={mats.coat} />
+              </group>
             </group>
           </group>
 
           {/* -------------------- TARI (tutuma gourd at the waist) -------------------- */}
-          <mesh geometry={geo.cord} material={mats.cord} />
-          <group ref={tari} position={[0.42, -0.16, 0.3]}>
+          <mesh geometry={geo.cord} material={mats.cord} userData={only(0)} />
+          <group ref={tari} position={[0.42, -0.16, 0.3]} userData={only(0)}>
             <group position={[0, -0.2, 0]} rotation={[0.1, 0, 0.12]}>
               <mesh geometry={geo.gourd} material={mats.gourd} />
               {/* cord wrapped around the neck */}

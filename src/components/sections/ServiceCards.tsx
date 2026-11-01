@@ -4,12 +4,27 @@ import { useEffect, useRef } from "react";
 import type { Locale } from "@/lib/i18n";
 import { services, serviceUi } from "@/content/services";
 import { ArrowUpRight, ServiceIcon } from "@/components/ui/Icons";
+import { cn } from "@/lib/ui";
+import { ServiceVisual } from "./ServiceVisuals";
+
+const BIG = new Set(["web", "ai", "content", "social"]);
+const TINT: Record<string, string> = {
+  web: "25 227 107",
+  ai: "25 227 107",
+  automation: "45 212 191",
+  apps: "163 230 53",
+  systems: "16 185 129",
+  ux: "124 156 255",
+  content: "245 158 11",
+  social: "255 77 109",
+};
 
 /**
  * Premium service cards:
  *  - rise in with a soft 3D flip, staggered, the first time the grid scrolls into view
  *  - tilt toward the cursor with a moving light and a glowing edge
  *  - each card is a link to its own service page
+ *  - each card has its own animated scene (ServiceVisuals), running only while on screen
  * With prefers-reduced-motion there is no tilt and no entrance motion.
  */
 export function ServiceCards({ locale }: { locale: Locale }) {
@@ -21,17 +36,17 @@ export function ServiceCards({ locale }: { locale: Locale }) {
     if (!el) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce || !("IntersectionObserver" in window)) {
+      if (!reduce) el.dataset.live = "true";
       el.dataset.in = "true";
       return;
     }
     const io = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting) {
-          el.dataset.in = "true";
-          io.disconnect();
-        }
+        if (e.isIntersecting) el.dataset.in = "true";
+        if (e.isIntersecting) el.dataset.live = "true";
+        else delete el.dataset.live;
       },
-      { threshold: 0.12 },
+      { threshold: 0.05 },
     );
     io.observe(el);
 
@@ -80,58 +95,56 @@ export function ServiceCards({ locale }: { locale: Locale }) {
   }, []);
 
   return (
-    <ul ref={grid} className="svc-grid mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <ul ref={grid} className="svc-grid mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {services.map((s, i) => {
         const c = s.copy[locale];
+        const big = BIG.has(s.key);
         return (
-          <li key={s.key} className="svc-card" style={{ "--i": i } as React.CSSProperties}>
+          <li key={s.key} className={cn("svc-card", big && "sm:col-span-2")} style={{ "--i": i, "--tint": TINT[s.key] } as React.CSSProperties}>
             <a
               href={`/${locale}/servicios/${s.slug}`}
-              className="svc-inner group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-line bg-white p-6 outline-none sm:p-7"
+              className="svc-inner group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] bg-[#0b140f] outline-none ring-1 ring-inset ring-white/10"
             >
-              {/* moving light + glowing edge */}
+              <span aria-hidden="true" className="svc-border" />
               <span aria-hidden="true" className="svc-light" />
-              <span aria-hidden="true" className="svc-edge" />
-              {/* oversized index in the background */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute -bottom-5 -right-2 select-none font-semibold leading-none tracking-[-0.06em] text-ink/[0.03] transition-all duration-700 [font-size:6.5rem] group-hover:-translate-y-2 group-hover:text-brand/[0.14]"
-              >
-                {String(i + 1).padStart(2, "0")}
-              </span>
 
-              <div className="relative flex items-start justify-between">
-                <span className="grid size-12 place-items-center rounded-2xl bg-mist text-ink transition-all duration-500 [transition-timing-function:var(--ease-out-expo)] group-hover:-translate-y-1 group-hover:-rotate-6 group-hover:bg-brand group-hover:shadow-[0_12px_30px_-10px_rgb(25_227_107/0.8)]">
-                  <ServiceIcon name={s.key} />
-                </span>
-                <span className="grid size-9 place-items-center rounded-full border border-line text-ink-soft transition-all duration-500 [transition-timing-function:var(--ease-out-expo)] group-hover:rotate-45 group-hover:border-ink group-hover:bg-ink group-hover:text-white">
-                  <ArrowUpRight className="size-4" />
+              {/* animated scene */}
+              <div className={cn("svc-stage relative overflow-hidden border-b border-white/[0.06]", big ? "h-64" : "h-56")}>
+                <ServiceVisual kind={s.key} locale={locale} />
+                <span aria-hidden="true" className="absolute left-4 top-4 rounded-full border border-white/10 bg-black/30 px-2 py-0.5 font-mono text-[10px] text-white/55 backdrop-blur">
+                  {String(i + 1).padStart(2, "0")}
                 </span>
               </div>
 
-              <h3 className="relative mt-8 text-xl font-semibold tracking-tight text-ink">{c.title}</h3>
-              <p className="relative mt-2 text-[15px] leading-relaxed text-ink-soft">{c.short}</p>
-
-              <div className="relative mt-5 flex-1">
-                <p className="rounded-2xl bg-mist/80 p-3.5 text-[13.5px] leading-snug text-ink-soft transition-colors duration-500 group-hover:bg-brand-50">
-                  <span className="mb-1 flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.12em] text-[#b45309]">
-                    <span className="size-1.5 rounded-full bg-[#f59e0b]" />
-                    {ui.costLabel}
+              <div className="relative flex flex-1 flex-col p-6 sm:p-7">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-brand ring-1 ring-inset ring-white/10 transition-all duration-500 [transition-timing-function:var(--ease-out-expo)] group-hover:-rotate-6 group-hover:bg-brand group-hover:text-ink group-hover:shadow-[0_12px_30px_-10px_rgb(25_227_107/0.8)]">
+                      <ServiceIcon name={s.key} />
+                    </span>
+                    <h3 className="text-lg font-semibold leading-tight tracking-tight text-white sm:text-xl">{c.title}</h3>
+                  </div>
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full border border-white/15 text-white/70 transition-all duration-500 [transition-timing-function:var(--ease-out-expo)] group-hover:rotate-45 group-hover:border-brand group-hover:bg-brand group-hover:text-ink">
+                    <ArrowUpRight className="size-4" />
                   </span>
-                  {c.cost}
+                </div>
+                <p className={cn("mt-3 text-[15px] leading-relaxed text-white/65", big && "max-w-[34rem]")}>{c.short}</p>
+                <p className="mt-4 flex items-start gap-2 text-[13px] leading-snug text-white/50">
+                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#f59e0b]" />
+                  <span>
+                    <span className="font-medium text-[#fbbf24]">{ui.costLabel}: </span>
+                    {c.cost}
+                  </span>
                 </p>
-              </div>
-
-              <div className="relative mt-6 flex items-center justify-between gap-3 border-t border-line pt-4">
-                <span className="text-sm font-medium leading-snug text-brand-ink">{c.outcome}</span>
-                <span className="relative shrink-0 overflow-hidden whitespace-nowrap text-sm font-medium text-ink">
-                  <span className="block transition-transform duration-500 [transition-timing-function:var(--ease-out-expo)] group-hover:-translate-y-full">
-                    {ui.viewService}
+                <div className="mt-auto flex items-center justify-between gap-3 pt-6">
+                  <span className="rounded-full bg-brand/10 px-3 py-1 text-[13px] font-medium text-brand ring-1 ring-inset ring-brand/25">{c.outcome}</span>
+                  <span className="relative shrink-0 overflow-hidden whitespace-nowrap text-sm font-medium text-white/80">
+                    <span className="block transition-transform duration-500 [transition-timing-function:var(--ease-out-expo)] group-hover:-translate-y-full">{ui.viewService}</span>
+                    <span aria-hidden="true" className="absolute inset-0 block translate-y-full text-brand transition-transform duration-500 [transition-timing-function:var(--ease-out-expo)] group-hover:translate-y-0">
+                      {ui.viewService}
+                    </span>
                   </span>
-                  <span aria-hidden="true" className="absolute inset-0 block translate-y-full text-brand-ink transition-transform duration-500 [transition-timing-function:var(--ease-out-expo)] group-hover:translate-y-0">
-                    {ui.viewService}
-                  </span>
-                </span>
+                </div>
               </div>
             </a>
           </li>

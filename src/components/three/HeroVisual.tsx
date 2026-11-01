@@ -26,9 +26,13 @@ function canRender3D() {
 
 /**
  * ROBOT SLOT. The 3D area of the hero. Loads the WebGL scene (El Camba, see Robot.tsx) lazily
- * after the page is idle on capable devices. Everyone else sees a still render of the same robot.
+ * after the page is idle on capable devices. Everyone else sees still renders of the same robot,
+ * swapping to the active slide's outfit.
  */
-export function HeroVisual({ shared, className }: { shared: Shared; className?: string }) {
+/** Still renders of El Camba in each slide's outfit (camba, AI receptionist, web designer, teacher, chef). */
+const POSTERS = [0, 1, 2, 3, 4].map((i) => `/robot/el-camba-${i}.webp`);
+
+export function HeroVisual({ shared, active, className }: { shared: Shared; active: number; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<"pending" | "3d" | "fallback">("pending");
   const [ready, setReady] = useState(false);
@@ -76,7 +80,20 @@ export function HeroVisual({ shared, className }: { shared: Shared; className?: 
         )}
       >
         <div className="relative size-full">
-          <Image src="/robot/el-camba.webp" alt="" fill priority sizes="(min-width: 1024px) 44rem, 95vw" className="object-contain" />
+          {POSTERS.map((src, i) => (
+            <Image
+              key={src}
+              src={src}
+              alt=""
+              fill
+              priority={i === 0}
+              sizes="(min-width: 1024px) 44rem, 95vw"
+              className={cn(
+                "object-contain transition-[opacity,transform] duration-700 [transition-timing-function:var(--ease-out-expo)]",
+                i === active ? "scale-100 opacity-100" : "scale-[0.96] opacity-0",
+              )}
+            />
+          ))}
         </div>
       </div>
       {mode === "3d" && (

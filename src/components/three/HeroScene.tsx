@@ -145,12 +145,23 @@ function Rig({ shared, children }: { shared: Shared; children: React.ReactNode }
   return <group ref={group}>{children}</group>;
 }
 
-export default function HeroScene({ shared, running }: { shared: Shared; running: boolean }) {
+export default function HeroScene({
+  shared,
+  running,
+  still = false,
+  bare = false,
+}: {
+  shared: Shared;
+  running: boolean;
+  still?: boolean;
+  /** Robot only, no rings or particles (for rendering cut-out stills). */
+  bare?: boolean;
+}) {
   return (
     <Canvas
       dpr={[1, 1.75]}
       camera={{ position: [0, 2.1, 9.6], fov: 34 }}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      gl={{ antialias: true, alpha: true, powerPreference: "high-performance", preserveDrawingBuffer: still }}
       frameloop={running ? "always" : "never"}
       aria-hidden="true"
     >
@@ -158,13 +169,15 @@ export default function HeroScene({ shared, running }: { shared: Shared; running
       <LookAt y={0.3} />
       <Rig shared={shared}>
         <group position={[0, -0.05, 0]}>
-          <Robot shared={shared} />
+          <Robot shared={shared} still={still} />
         </group>
         {/* holographic pedestal: the orbit rings lie flat around his feet */}
-        <group position={[0, -2.2, 0]} rotation={[-Math.PI / 2 + 0.06, 0, 0]} scale={0.62}>
-          <Rings shared={shared} />
-        </group>
-        <Particles />
+        {!bare && (
+          <group position={[0, -2.2, 0]} rotation={[-Math.PI / 2 + 0.06, 0, 0]} scale={0.62}>
+            <Rings shared={shared} />
+          </group>
+        )}
+        {!bare && <Particles />}
       </Rig>
     </Canvas>
   );
