@@ -89,18 +89,8 @@ export const en: Dictionary = {
   marquee: ["Websites", "AI agents", "Automation", "Mobile apps", "CRM", "ERP", "SIS", "POS", "UX/UI", "AI content"],
   services: {
     eyebrow: "Services",
-    title: "Everything digital your business needs, under one roof.",
-    body: "From the first design to the system your team uses every day. One team, one standard: it has to look incredible and work even better.",
-    items: [
-      { key: "web", title: "Websites & e-commerce", body: "Fast sites and online stores that turn visits into sales.", outcome: "More orders" },
-      { key: "ai", title: "AI agents", body: "Receptionists and chatbots that answer 24/7 on WhatsApp and your site.", outcome: "No message left unanswered" },
-      { key: "automation", title: "Workflow automation", body: "Flows that connect your tools and remove repetitive work.", outcome: "Fewer manual tasks" },
-      { key: "apps", title: "Mobile apps", body: "Your idea turned into a custom app for iOS and Android.", outcome: "More loyal customers" },
-      { key: "systems", title: "CRM, ERP, SIS & POS", body: "Custom operating systems built around how you really work.", outcome: "Everything in one place" },
-      { key: "ux", title: "UX/UI design", body: "Clear, beautiful interfaces tested with real people.", outcome: "Happier users" },
-      { key: "content", title: "AI content", body: "AI-generated UGC, images and videos for your brand.", outcome: "More content, lower cost" },
-      { key: "social", title: "Social media", body: "Strategy and management that grows your brand online.", outcome: "More reach" },
-    ],
+    title: "What you don't change today, you keep paying for every month.",
+    body: "We know running a business is already a lot. So we're not here to sell you technology: we're here to take off your plate whatever is costing you customers, time and money. Pick where to start and we'll walk with you the whole way.",
   },
   projects: {
     eyebrow: "Work",

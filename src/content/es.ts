@@ -90,18 +90,8 @@ export const es = {
   marquee: ["Webs", "Agentes de IA", "Automatización", "Apps móviles", "CRM", "ERP", "SIS", "POS", "UX/UI", "Contenido con IA"],
   services: {
     eyebrow: "Servicios",
-    title: "Todo lo digital que tu negocio necesita, bajo un mismo techo.",
-    body: "Del diseño al sistema que usa tu equipo todos los días. Un solo equipo, un solo estándar: que se vea increíble y que funcione mejor.",
-    items: [
-      { key: "web", title: "Webs y e-commerce", body: "Sitios rápidos y tiendas online que convierten visitas en ventas.", outcome: "Más pedidos" },
-      { key: "ai", title: "Agentes de IA", body: "Recepcionistas y chatbots que atienden 24/7 por WhatsApp y tu web.", outcome: "Cero mensajes sin respuesta" },
-      { key: "automation", title: "Automatización", body: "Flujos que conectan tus herramientas y eliminan el trabajo repetitivo.", outcome: "Menos tareas manuales" },
-      { key: "apps", title: "Apps móviles", body: "Tu idea convertida en una app a medida para iOS y Android.", outcome: "Clientes más fieles" },
-      { key: "systems", title: "CRM, ERP, SIS y POS", body: "Sistemas operativos a medida para tu forma real de trabajar.", outcome: "Todo en un lugar" },
-      { key: "ux", title: "Diseño UX/UI", body: "Interfaces claras y hermosas, probadas con personas reales.", outcome: "Usuarios felices" },
-      { key: "content", title: "Contenido con IA", body: "UGC, imágenes y videos generados con IA para tu marca.", outcome: "Más contenido, menos costo" },
-      { key: "social", title: "Redes sociales", body: "Estrategia y gestión de redes para que tu marca crezca.", outcome: "Más alcance" },
-    ],
+    title: "Lo que no cambias hoy, lo sigues pagando cada mes.",
+    body: "Sabemos que llevar un negocio ya es bastante trabajo. Por eso no venimos a venderte tecnología: venimos a quitarte de encima lo que hoy te cuesta clientes, tiempo y plata. Elige por dónde empezar y te acompañamos en todo el camino.",
   },
   projects: {
     eyebrow: "Proyectos",

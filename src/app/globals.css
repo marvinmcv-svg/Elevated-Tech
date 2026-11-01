@@ -255,3 +255,72 @@ details.faq[open]::details-content { block-size: auto; }
 }
 [data-rail="on"] .rail-card { width: min(27rem, 32vw, 62svh); flex-shrink: 0; }
 [data-rail="on"] .rail-progress { display: block; }
+
+/* ───────────────────────── Service cards ───────────────────────── */
+.svc-card { perspective: 1100px; }
+.svc-inner {
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  transition:
+    transform 0.6s var(--ease-out-expo),
+    box-shadow 0.6s var(--ease-out-expo),
+    border-color 0.6s ease;
+  will-change: transform;
+}
+.svc-inner:hover,
+.svc-inner:focus-visible {
+  border-color: rgb(25 227 107 / 0.35);
+  box-shadow:
+    0 30px 60px -28px rgb(4 86 42 / 0.35),
+    0 0 0 1px rgb(25 227 107 / 0.08);
+}
+.svc-inner:focus-visible { outline: 2px solid var(--color-brand-ink); outline-offset: 3px; }
+.svc-card:hover .svc-inner { transition-duration: 0.25s, 0.6s, 0.6s; }
+.svc-light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 0%), rgb(25 227 107 / 0.14), transparent 55%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.svc-edge {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgb(25 227 107 / 0.9), transparent 60%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.svc-inner:hover .svc-light,
+.svc-inner:hover .svc-edge { opacity: 1; }
+
+/* staggered 3D rise on first view (content stays visible without JS) */
+.js .svc-grid:not([data-in]) .svc-card { opacity: 0; transform: translate3d(0, 56px, 0) rotateX(16deg) scale(0.96); }
+.svc-grid .svc-card {
+  transform-origin: 50% 100%;
+  transition:
+    opacity 0.9s var(--ease-out-expo),
+    transform 1.2s var(--ease-out-expo);
+  transition-delay: calc(var(--i, 0) * 75ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .svc-grid:not([data-in]) .svc-card { opacity: 1; transform: none; }
+  .svc-inner { transform: none !important; transition: none; }
+}
+
+/* ───────────────────────── El-IAs chat ───────────────────────── */
+@keyframes elias-in { from { opacity: 0; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: none; } }
+@keyframes elias-pop { from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes elias-dot { 0%, 80%, 100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+.elias-in { animation: elias-in 0.45s var(--ease-out-expo) both; }
+.elias-pop { animation: elias-pop 0.6s var(--ease-out-expo) both; }
+.elias-dot { width: 7px; height: 7px; border-radius: 9999px; background: var(--color-brand-ink); animation: elias-dot 1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .elias-in, .elias-pop, .elias-dot { animation: none; }
+}

@@ -5,7 +5,7 @@ import { TodoBadge } from "@/components/ui/Placeholder";
 import { WhatsAppLink } from "@/components/ui/WhatsAppLink";
 import { Mail, Pin, WhatsApp } from "@/components/ui/Icons";
 
-export function Footer({ copy, nav }: { copy: Dictionary["footer"]; nav: Dictionary["nav"] }) {
+export function Footer({ copy, nav, base = "" }: { copy: Dictionary["footer"]; nav: Dictionary["nav"]; base?: string }) {
   const year = new Date().getFullYear();
   return (
     <footer className="on-dark relative overflow-hidden bg-night text-white">
@@ -20,7 +20,7 @@ export function Footer({ copy, nav }: { copy: Dictionary["footer"]; nav: Diction
             <ul className="mt-5 space-y-3">
               {nav.items.map((i) => (
                 <li key={i.id}>
-                  <a href={`#${i.id}`} className="text-white/75 transition-colors hover:text-brand">{i.label}</a>
+                  <a href={`${base}#${i.id}`} className="text-white/75 transition-colors hover:text-brand">{i.label}</a>
                 </li>
               ))}
             </ul>

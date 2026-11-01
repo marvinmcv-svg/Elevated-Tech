@@ -1,6 +1,7 @@
 import type { Dictionary } from "@/content";
 import type { Locale } from "@/lib/i18n";
 import { site } from "@/lib/site";
+import { services } from "@/content/services";
 
 export function StructuredData({ dict, locale }: { dict: Dictionary; locale: Locale }) {
   const url = `${site.url}/${locale}`;
@@ -35,9 +36,10 @@ export function StructuredData({ dict, locale }: { dict: Dictionary; locale: Loc
     hasOfferCatalog: {
       "@type": "OfferCatalog",
       name: dict.services.eyebrow,
-      itemListElement: dict.services.items.map((s) => ({
+      itemListElement: services.map((s) => ({
         "@type": "Offer",
-        itemOffered: { "@type": "Service", name: s.title, description: s.body },
+        url: `${url}/servicios/${s.slug}`,
+        itemOffered: { "@type": "Service", name: s.copy[locale].title, description: s.copy[locale].short },
       })),
     },
   };

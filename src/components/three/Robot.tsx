@@ -8,7 +8,8 @@ import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 /**
  * "El Camba": the Elevated Tech robot, dressed the way people dress in Santa Cruz de la Sierra.
  * Glossy white robot shell, white cotton shirt with rolled sleeves, white trousers rolled at the
- * shin, a green neckerchief, a woven "sombrero de saó", leather abarcas and a woven tari bag.
+ * shin, a green neckerchief, a woven "sombrero de saó", leather abarcas and a tari: the dried tutuma
+ * gourd cambas carry at the waist for chicha or water.
  *
  * Everything is procedural (geometry, woven textures, rig, animation), so there are no model files
  * to download. All motion is spring-damped toward targets, so it never snaps.
@@ -227,42 +228,49 @@ function clothBump() {
   );
 }
 
-/** Tari: hand-woven striped bag with a little diamond motif. */
-function tariTexture() {
-  return canvasTex(256, 256, (ctx) => {
-    const stripes = [
-      ["#f1ead8", 26],
-      ["#0f9b47", 10],
-      ["#7a4a26", 6],
-      ["#f1ead8", 8],
-      ["#c8372d", 12],
-      ["#f1ead8", 8],
-      ["#7a4a26", 6],
-      ["#0f9b47", 10],
-    ] as const;
-    let y = 0;
-    while (y < 256) {
-      for (const [col, h] of stripes) {
-        ctx.fillStyle = col;
-        ctx.fillRect(0, y, 256, h);
-        y += h;
-      }
+/** Tari: a dried, varnished tutuma gourd with a pyrographed band, like the ones sold in the markets. */
+function gourdTexture() {
+  return canvasTex(512, 256, (ctx) => {
+    const g = ctx.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, "#5a3417");
+    g.addColorStop(0.35, "#8a5527");
+    g.addColorStop(0.6, "#9b6430");
+    g.addColorStop(1, "#5e3618");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 512, 256);
+    const r = rng(11);
+    // natural mottling
+    for (let i = 0; i < 260; i++) {
+      const x = r() * 512;
+      const y = r() * 256;
+      const rad = 4 + r() * 22;
+      const sp = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      const dark = r() > 0.45;
+      sp.addColorStop(0, dark ? "rgba(60,30,10,0.28)" : "rgba(190,130,70,0.22)");
+      sp.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = sp;
+      ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
     }
-    // diamonds on the cream bands
-    ctx.fillStyle = "#c8372d";
-    for (let x = 8; x < 256; x += 32) {
+    // burned (pyrographed) zig-zag band around the belly
+    ctx.strokeStyle = "rgba(35,16,6,0.85)";
+    ctx.lineWidth = 3;
+    for (const y0 of [118, 150]) {
       ctx.beginPath();
-      ctx.moveTo(x + 8, 4);
-      ctx.lineTo(x + 16, 13);
-      ctx.lineTo(x + 8, 22);
-      ctx.lineTo(x, 13);
-      ctx.closePath();
-      ctx.fill();
+      ctx.moveTo(0, y0);
+      ctx.lineTo(512, y0);
+      ctx.stroke();
     }
-    // weave grain
-    for (let yy = 0; yy < 256; yy += 2) {
-      ctx.fillStyle = "rgba(0,0,0,0.06)";
-      ctx.fillRect(0, yy, 256, 1);
+    ctx.beginPath();
+    for (let x = 0; x <= 512; x += 32) {
+      ctx.lineTo(x, 146);
+      ctx.lineTo(x + 16, 122);
+    }
+    ctx.stroke();
+    ctx.fillStyle = "rgba(35,16,6,0.8)";
+    for (let x = 16; x < 512; x += 32) {
+      ctx.beginPath();
+      ctx.arc(x, 140, 3, 0, Math.PI * 2);
+      ctx.fill();
     }
   });
 }
@@ -354,9 +362,11 @@ const smooth = (a: number, b: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 
-type Gesture = "wave" | "present" | "tip";
-const GESTURE_FOR_SLIDE: Gesture[] = ["wave", "present", "tip", "present", "wave"];
-const GESTURE_LEN: Record<Gesture, number> = { wave: 2.8, present: 2.4, tip: 2.6 };
+type Gesture = "wave" | "present" | "tip" | "thumbs" | "takirari";
+const GESTURE_FOR_SLIDE: Gesture[] = ["wave", "present", "thumbs", "tip", "present"];
+const GESTURE_LEN: Record<Gesture, number> = { wave: 2.8, present: 2.4, tip: 2.6, thumbs: 2.4, takirari: 6.8 };
+/** Takirari tempo: steps per second. */
+const BEAT = 2.1;
 
 /* ----------------------------------------------------------------------------------------------
  * The robot
@@ -382,6 +392,9 @@ export function Robot({ shared }: { shared: Shared }) {
   const tari = useRef<THREE.Group>(null);
   const antennaTip = useRef<THREE.Mesh>(null);
   const earGlowL = useRef<THREE.MeshStandardMaterial>(null);
+  const fingersR = useRef<Array<THREE.Group | null>>([]);
+  const thumbR = useRef<THREE.Group>(null);
+  const hanky = useRef<THREE.Group>(null);
 
   /* ---------- materials & textures ---------- */
   const mats = useMemo(() => {
@@ -396,7 +409,7 @@ export function Robot({ shared }: { shared: Shared }) {
     band.repeat.set(3, 1);
     const cb = clothBump();
     cb.repeat.set(6, 6);
-    const tari = tariTexture();
+    const gourd = gourdTexture();
 
     return {
       shell: new THREE.MeshPhysicalMaterial({
@@ -466,7 +479,9 @@ export function Robot({ shared }: { shared: Shared }) {
       band: new THREE.MeshStandardMaterial({ map: band, roughness: 0.7 }),
       leather: new THREE.MeshStandardMaterial({ color: C.leather, roughness: 0.55, metalness: 0.05 }),
       sole: new THREE.MeshStandardMaterial({ color: C.sole, roughness: 0.85 }),
-      tari: new THREE.MeshStandardMaterial({ map: tari, roughness: 0.85, bumpMap: cb, bumpScale: 0.8 }),
+      gourd: new THREE.MeshPhysicalMaterial({ map: gourd, roughness: 0.38, clearcoat: 0.7, clearcoatRoughness: 0.25 }),
+      cork: new THREE.MeshStandardMaterial({ color: "#b98a57", roughness: 0.95 }),
+      cord: new THREE.MeshStandardMaterial({ color: "#4a2c15", roughness: 0.8 }),
       button: new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.25 }),
       shadow: new THREE.MeshBasicMaterial({
         color: "#0a2016",
@@ -547,27 +562,33 @@ export function Robot({ shared }: { shared: Shared }) {
       tri.computeVertexNormals();
     }
 
-    // Tari strap: from behind the right shoulder, over it, across the chest to the left hip
     const TY = 0.3; // torso centre y in chest space
-    const strapPts: THREE.Vector3[] = [];
-    strapPts.push(new THREE.Vector3(-0.3, 0.55, -0.3));
-    strapPts.push(new THREE.Vector3(-0.36, 0.79, -0.08));
-    strapPts.push(new THREE.Vector3(-0.36, 0.8, 0.12));
-    for (let i = 0; i <= 8; i++) {
-      const t = i / 8;
-      const x = -0.32 + t * 0.78;
-      const y = 0.7 - t * 0.9;
-      const yn = (y - TY) / TORSO[1];
-      const taperK = torsoTaper(Math.max(-1, Math.min(1, yn)));
-      const rx = TORSO[0] * taperK;
-      const rz = TORSO[2] * (0.5 + taperK * 0.5);
-      const z = surfZ(Math.min(Math.abs(x), rx * 0.97), Math.max(-TORSO[1] * 0.97, Math.min(TORSO[1] * 0.97, y - TY)), rx, TORSO[1], rz, TORSO[3]);
-      strapPts.push(new THREE.Vector3(x, y, Math.max(z, 0.12) + 0.035));
+
+    // Tari gourd: round belly, waist, small upper bulb and a narrow mouth (lathe profile)
+    const gourdPts: THREE.Vector2[] = [];
+    const sphereR = (y: number, c: number, R: number) => {
+      const d = R * R - (y - c) * (y - c);
+      return d > 0 ? Math.sqrt(d) : 0;
+    };
+    for (let i = 0; i <= 56; i++) {
+      const y = -0.2 + (i / 56) * 0.42; // -0.2 .. 0.22
+      const belly = sphereR(y, -0.075, 0.125);
+      const bulb = sphereR(y, 0.095, 0.058);
+      const neck = y > 0.12 ? 0.03 : 0;
+      const waist = y > -0.02 && y < 0.07 ? 0.042 : 0;
+      gourdPts.push(new THREE.Vector2(Math.max(0.002, belly, bulb, neck, waist), y));
     }
-    strapPts.push(new THREE.Vector3(0.5, -0.36, 0.22));
-    const strapCurve = new THREE.CatmullRomCurve3(strapPts, false, "centripetal");
-    const strap = new THREE.TubeGeometry(strapCurve, 80, 0.022, 8, false);
-    strap.scale(1, 1, 1);
+    const gourd = new THREE.LatheGeometry(gourdPts, 40);
+    gourd.computeVertexNormals();
+
+    // Cord that ties the tari to the belt
+    const cordCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.3, -0.02, 0.31),
+      new THREE.Vector3(0.36, -0.08, 0.33),
+      new THREE.Vector3(0.4, -0.13, 0.32),
+      new THREE.Vector3(0.42, -0.16, 0.3),
+    ]);
+    const cord = new THREE.TubeGeometry(cordCurve, 24, 0.012, 6, false);
 
     return {
       HEAD,
@@ -581,14 +602,12 @@ export function Robot({ shared }: { shared: Shared }) {
       foot: superEllipsoid(0.16, 0.09, 0.27, 0.55),
       sole: superEllipsoid(0.185, 0.035, 0.31, 0.35, undefined, [40, 12]),
       palm: superEllipsoid(0.085, 0.09, 0.05, 0.55, undefined, [24, 16]),
-      tari: superEllipsoid(0.2, 0.22, 0.06, 0.3, undefined, [40, 28], true),
-      tariFlap: superEllipsoid(0.205, 0.08, 0.065, 0.3, undefined, [32, 12], true),
+      gourd,
+      cord,
       pocket: superEllipsoid(0.11, 0.12, 0.01, 0.25, undefined, [24, 12]),
       crown,
       brim,
       tri,
-      strap,
-      strapCurve,
       surfZTorso: (x: number, y: number) => {
         const yn = Math.max(-1, Math.min(1, (y - TY) / TORSO[1]));
         const k = torsoTaper(yn);
@@ -621,7 +640,13 @@ export function Robot({ shared }: { shared: Shared }) {
     look: { x: 0, y: 0 },
     eye: { x: 0, y: 0, happy: 0 },
     j: {} as Record<string, number>,
+    nextDance: 14 + Math.random() * 8, // first takirari after ~15–22 s, then every 25–40 s
+    pendingDance: false,
   });
+
+  const dance = () => {
+    st.current.pendingDance = true;
+  };
 
   useFrame((state, rawDt) => {
     const dt = Math.min(rawDt, 1 / 20);
@@ -629,13 +654,28 @@ export function Robot({ shared }: { shared: Shared }) {
     s.t += dt;
     const t = s.t;
 
-    // New slide → new gesture
+    s.gT += dt;
+    const dancing = s.gesture === "takirari" && s.gT < GESTURE_LEN.takirari;
+    // New slide → new gesture (a takirari in progress is never cut short)
     if (shared.active !== s.lastSlide) {
       s.lastSlide = shared.active;
-      s.gesture = GESTURE_FOR_SLIDE[shared.active] ?? "present";
-      s.gT = 0;
-    } else {
-      s.gT += dt;
+      if (!dancing) {
+        s.gesture = GESTURE_FOR_SLIDE[shared.active] ?? "present";
+        s.gT = 0;
+      }
+    }
+    // Every now and then (or when clicked) he breaks into a takirari
+    s.nextDance -= dt;
+    if (s.nextDance <= 0) {
+      s.pendingDance = true;
+      s.nextDance = 25 + Math.random() * 15;
+    }
+    if (s.pendingDance && (s.gT > GESTURE_LEN[s.gesture] - 0.4 || s.gesture !== "takirari")) {
+      s.pendingDance = false;
+      if (!dancing) {
+        s.gesture = "takirari";
+        s.gT = 0;
+      }
     }
     const G = s.gesture;
     const len = GESTURE_LEN[G];
@@ -676,6 +716,16 @@ export function Robot({ shared }: { shared: Shared }) {
       shLy: 0,
       elL: -0.28,
       elLz: 0,
+      curl: 0,
+      thumbUp: 0,
+      hanky: 0,
+      rootX: 0,
+      rootRY: 0,
+      bounce: 0,
+      hipLx: 0,
+      hipRx: 0,
+      kneeL: 0,
+      kneeR: 0,
       hatY: 0,
       hatTilt: 0,
       hipL: -sway * 0.02,
@@ -717,15 +767,81 @@ export function Robot({ shared }: { shared: Shared }) {
         J.hatTilt = -0.22 * env;
         J.headX += nod * 0.22;
         J.happy = env;
+      } else if (G === "thumbs") {
+        // Forearm up, fist closed, thumb up, little confident nod
+        const nod = Math.sin(smooth(0.4, len - 0.5, s.gT) * Math.PI);
+        J.shRz = THREE.MathUtils.lerp(J.shRz, -0.3, env);
+        J.shRx = THREE.MathUtils.lerp(J.shRx, -0.45, env);
+        J.shRy = THREE.MathUtils.lerp(0, 0.25, env);
+        J.elR = THREE.MathUtils.lerp(J.elR, -2.05, env);
+        J.hRz = THREE.MathUtils.lerp(0, 0.15, env);
+        J.curl = env;
+        J.thumbUp = env;
+        J.headX += nod * 0.12;
+        J.headZ += 0.1 * env;
+        J.torsoZ += 0.04 * env;
+        J.happy = env;
+      } else if (G === "takirari") {
+        // Bouncy alternating steps, hips swaying side to side, pañuelo twirling overhead,
+        // the other hand on the hip. Happy eyes the whole time.
+        const b = s.gT * BEAT * Math.PI; // one step per half cycle
+        const step = Math.sin(b); // + → left leg up, − → right leg up
+        const up = Math.abs(step);
+        J.bounce = up * 0.07 * env;
+        J.rootX = Math.sin(b * 0.5) * 0.14 * env;
+        J.rootRY = Math.sin(b * 0.5) * 0.22 * env;
+        J.torsoZ = -step * 0.1 * env + J.torsoZ * (1 - env);
+        J.torsoY += Math.sin(b * 0.5) * 0.12 * env;
+        J.hipLx = -Math.max(0, step) * 0.5 * env;
+        J.hipRx = -Math.max(0, -step) * 0.5 * env;
+        J.kneeL = Math.max(0, step) * 0.95 * env;
+        J.kneeR = Math.max(0, -step) * 0.95 * env;
+        J.hipL += step * 0.05 * env;
+        J.hipR += step * 0.05 * env;
+        // right hand up, twirling the pañuelo
+        J.shRz = THREE.MathUtils.lerp(J.shRz, -2.3 + Math.sin(b) * 0.15, env);
+        J.shRx = THREE.MathUtils.lerp(J.shRx, -0.2, env);
+        J.elR = THREE.MathUtils.lerp(J.elR, -0.35, env);
+        J.elRz = THREE.MathUtils.lerp(0, Math.sin(b * 2) * 0.45, env);
+        J.hRz = THREE.MathUtils.lerp(0, Math.cos(b * 2) * 0.5, env);
+        J.hanky = env;
+        // left hand on the hip
+        J.shLz = THREE.MathUtils.lerp(J.shLz, 0.75, env);
+        J.shLx = THREE.MathUtils.lerp(J.shLx, 0.15, env);
+        J.elL = THREE.MathUtils.lerp(J.elL, -0.2, env);
+        J.elLz = THREE.MathUtils.lerp(0, -1.7, env);
+        J.headX += Math.sin(b * 2) * 0.05 * env;
+        J.headZ = THREE.MathUtils.lerp(J.headZ, step * 0.12, env);
+        J.hatTilt = step * 0.05 * env;
+        J.happy = env;
       }
     }
 
     // ---- apply with springs (smooth, never snaps) ----
     const k = 7.5;
     const cur = s.j;
-    for (const key in J) cur[key] = damp(cur[key] ?? J[key], J[key], key === "elRz" || key === "hRz" ? 14 : k, dt);
+    const fast = G === "takirari" ? 16 : 14;
+    for (const key in J) {
+      const lam = key === "elRz" || key === "hRz" ? fast : G === "takirari" ? 11 : k;
+      cur[key] = damp(cur[key] ?? J[key], J[key], lam, dt);
+    }
 
-    if (root.current) root.current.position.y = cur.rootY;
+    if (root.current) {
+      root.current.position.set(cur.rootX, cur.rootY + cur.bounce, 0);
+      root.current.rotation.y = cur.rootRY;
+    }
+    fingersR.current.forEach((f, i) => {
+      if (f) f.rotation.set(0.35 + cur.curl * 1.9, 0, (i - 1) * -0.08);
+    });
+    if (thumbR.current) {
+      thumbR.current.rotation.set(0.6 - cur.thumbUp * 0.75, 0, -0.7 + cur.thumbUp * 0.75);
+      thumbR.current.scale.set(1 + cur.thumbUp * 0.3, 1 + cur.thumbUp * 0.4, 1 + cur.thumbUp * 0.3);
+    }
+    if (hanky.current) {
+      const h = cur.hanky;
+      hanky.current.scale.setScalar(h < 0.02 ? 0 : h);
+      hanky.current.rotation.set(Math.sin(t * 9) * 0.35, Math.sin(t * 6.5) * 0.6, Math.cos(t * 8) * 0.3);
+    }
     if (torso.current) torso.current.rotation.set(0, cur.torsoY, cur.torsoZ);
     if (chest.current) {
       chest.current.rotation.x = cur.chestX;
@@ -742,17 +858,18 @@ export function Robot({ shared }: { shared: Shared }) {
     if (shoulderL.current) shoulderL.current.rotation.set(cur.shLx, cur.shLy, cur.shLz);
     if (elbowL.current) elbowL.current.rotation.set(cur.elL, 0, cur.elLz);
     if (handL.current) handL.current.rotation.set(0, 0, 0);
-    if (hipL.current) hipL.current.rotation.set(-cur.knee * 0.5, 0, cur.hipL + 0.02);
-    if (hipR.current) hipR.current.rotation.set(-cur.knee * 0.5, 0, cur.hipR - 0.02);
-    if (kneeL.current) kneeL.current.rotation.x = cur.knee;
-    if (kneeR.current) kneeR.current.rotation.x = cur.knee;
+    if (hipL.current) hipL.current.rotation.set(-cur.knee * 0.5 + cur.hipLx, 0, cur.hipL + 0.02);
+    if (hipR.current) hipR.current.rotation.set(-cur.knee * 0.5 + cur.hipRx, 0, cur.hipR - 0.02);
+    if (kneeL.current) kneeL.current.rotation.x = cur.knee + cur.kneeL;
+    if (kneeR.current) kneeR.current.rotation.x = cur.knee + cur.kneeR;
     if (scarfTip.current) {
       scarfTip.current.rotation.x = -0.06 + Math.sin(t * 1.3) * 0.03 - cur.chestX;
       scarfTip.current.rotation.z = Math.sin(t * 0.9) * 0.05 - cur.torsoZ * 0.8;
     }
     if (tari.current) {
-      tari.current.rotation.z = -cur.torsoZ * 1.4 + Math.sin(t * 0.7) * 0.02;
-      tari.current.rotation.x = Math.sin(t * 0.8 + 1) * 0.02;
+      // swings like a pendulum, more when he dances
+      tari.current.rotation.z = -cur.torsoZ * 1.6 - cur.rootX * 1.2 + Math.sin(t * 0.7) * 0.03;
+      tari.current.rotation.x = Math.sin(t * 0.8 + 1) * 0.03 - cur.bounce * 2;
     }
 
     // Glow pulse
@@ -791,7 +908,16 @@ export function Robot({ shared }: { shared: Shared }) {
   const pocketZ = geo.surfZTorso(0.22, 0.44);
 
   return (
-    <group ref={root} position={[0, 0, 0]}>
+    <group
+      ref={root}
+      position={[0, 0, 0]}
+      onClick={(e) => {
+        e.stopPropagation();
+        dance();
+      }}
+      onPointerOver={() => (document.body.style.cursor = "pointer")}
+      onPointerOut={() => (document.body.style.cursor = "")}
+    >
       {/* soft contact shadow */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.13, 0.05]} material={mats.shadow}>
         <planeGeometry args={[2.4, 1.3]} />
@@ -950,8 +1076,6 @@ export function Robot({ shared }: { shared: Shared }) {
             </group>
           </group>
 
-          {/* tari strap */}
-          <mesh geometry={geo.strap} material={mats.leather} />
 
           {/* -------------------- ARMS -------------------- */}
           {[-1, 1].map((side) => (
@@ -996,7 +1120,14 @@ export function Robot({ shared }: { shared: Shared }) {
                   <mesh material={mats.steel} geometry={geo.palm} position={[0, -0.1, 0]} />
                   {/* three fingers + thumb, slightly curled */}
                   {[-1, 0, 1].map((f) => (
-                    <group key={f} position={[side * 0.0 + f * 0.05, -0.18, 0.0]} rotation={[0.35, 0, f * -0.08]}>
+                    <group
+                      key={f}
+                      ref={(el) => {
+                        if (side < 0) fingersR.current[f + 1] = el;
+                      }}
+                      position={[side * 0.0 + f * 0.05, -0.18, 0.0]}
+                      rotation={[0.35, 0, f * -0.08]}
+                    >
                       <mesh material={mats.graphite} position={[0, -0.04, 0]}>
                         <capsuleGeometry args={[0.017, 0.06, 4, 10]} />
                       </mesh>
@@ -1005,11 +1136,16 @@ export function Robot({ shared }: { shared: Shared }) {
                       </mesh>
                     </group>
                   ))}
-                  <group position={[side * -0.07, -0.11, 0.035]} rotation={[0.6, 0, side * 0.7]}>
+                  <group ref={side < 0 ? thumbR : undefined} position={[side * -0.07, -0.11, 0.035]} rotation={[0.6, 0, side * 0.7]}>
                     <mesh material={mats.graphite} position={[0, -0.04, 0]}>
                       <capsuleGeometry args={[0.018, 0.06, 4, 10]} />
                     </mesh>
                   </group>
+                  {side < 0 && (
+                    <group ref={hanky} position={[0, -0.2, 0.02]} scale={0}>
+                      <mesh geometry={geo.tri} material={mats.scarf} rotation={[0, 0, Math.PI]} position={[0, -0.02, 0]} scale={[0.75, 0.9, 1]} />
+                    </group>
+                  )}
                 </group>
               </group>
             </group>
@@ -1075,17 +1211,19 @@ export function Robot({ shared }: { shared: Shared }) {
             </group>
           </group>
 
-          {/* -------------------- TARI (woven shoulder bag) -------------------- */}
-          <group ref={tari} position={[0.5, -0.36, 0.22]}>
-            <group position={[0, -0.2, 0.02]} rotation={[0.08, 0.45, 0.06]}>
-              <mesh geometry={geo.tari} material={mats.tari} />
-              <mesh geometry={geo.tariFlap} position={[0, 0.15, 0.012]} material={mats.tari} />
-              {/* fringe */}
-              {Array.from({ length: 9 }).map((_, i) => (
-                <mesh key={i} position={[-0.16 + i * 0.04, -0.25, 0]} material={i % 3 === 1 ? mats.scarf : mats.leather}>
-                  <cylinderGeometry args={[0.007, 0.004, 0.08, 6]} />
-                </mesh>
-              ))}
+          {/* -------------------- TARI (tutuma gourd at the waist) -------------------- */}
+          <mesh geometry={geo.cord} material={mats.cord} />
+          <group ref={tari} position={[0.42, -0.16, 0.3]}>
+            <group position={[0, -0.2, 0]} rotation={[0.1, 0, 0.12]}>
+              <mesh geometry={geo.gourd} material={mats.gourd} />
+              {/* cord wrapped around the neck */}
+              <mesh position={[0, 0.17, 0]} rotation={[Math.PI / 2, 0, 0]} material={mats.cord}>
+                <torusGeometry args={[0.06, 0.011, 8, 24]} />
+              </mesh>
+              {/* cork stopper */}
+              <mesh position={[0, 0.245, 0]} material={mats.cork}>
+                <cylinderGeometry args={[0.036, 0.03, 0.06, 16]} />
+              </mesh>
             </group>
           </group>
         </group>

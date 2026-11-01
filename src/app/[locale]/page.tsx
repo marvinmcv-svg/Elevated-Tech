@@ -18,6 +18,7 @@ import { Faq } from "@/components/sections/Faq";
 import { Contact } from "@/components/sections/Contact";
 import { Footer } from "@/components/sections/Footer";
 import { WhatsAppFloat } from "@/components/sections/WhatsAppFloat";
+import { Elias } from "@/components/elias/Elias";
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -37,7 +38,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         <Stats stats={t.stats} />
         <Marquee items={t.marquee} />
         {/* 2. Services */}
-        <Services copy={t.services} />
+        <Services copy={t.services} locale={locale} />
         {/* 3. Featured projects + AI case */}
         <Projects copy={t.projects} locale={locale} />
         {/* 4. Restaurant bundle */}
@@ -56,6 +57,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       {/* 10. Footer */}
       <Footer copy={t.footer} nav={t.nav} />
       <WhatsAppFloat label={t.whatsappFloat} />
+      <Elias locale={locale} />
       <MotionRoot />
       <StructuredData dict={t} locale={locale} />
     </LeadFormProvider>

@@ -16,10 +16,16 @@ export function Header({
   locale,
   nav,
   a11y,
+  base = "",
+  altHref,
 }: {
   locale: Locale;
   nav: Dictionary["nav"];
   a11y: Dictionary["a11y"];
+  /** Prefix for in-page anchors. "" on the home page, `/${locale}` on sub-pages. */
+  base?: string;
+  /** Same page in the other language (defaults to the other home page). */
+  altHref?: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -49,7 +55,7 @@ export function Header({
 
   const LangToggle = ({ className }: { className?: string }) => (
     <a
-      href={`/${other}`}
+      href={altHref ?? `/${other}`}
       hrefLang={other}
       lang={other}
       onClick={switchLanguage}
@@ -72,7 +78,7 @@ export function Header({
       )}
     >
       <div className="container-x flex h-16 items-center justify-between gap-4 lg:h-[4.5rem]">
-        <a href="#top" className="rounded-lg" aria-label="Elevated Tech" onClick={() => setOpen(false)}>
+        <a href={`${base}#top`} className="rounded-lg" aria-label="Elevated Tech" onClick={() => setOpen(false)}>
           <Logo />
         </a>
 
@@ -81,7 +87,7 @@ export function Header({
             {nav.items.map((item) => (
               <li key={item.id}>
                 <a
-                  href={`#${item.id}`}
+                  href={`${base}#${item.id}`}
                   className="relative rounded-full px-3.5 py-2 text-[14.5px] text-ink-soft transition-colors hover:text-ink after:absolute after:inset-x-3.5 after:bottom-1 after:h-px after:origin-left after:scale-x-0 after:bg-brand-ink after:transition-transform after:duration-300 hover:after:scale-x-100"
                 >
                   {item.label}
@@ -131,7 +137,7 @@ export function Header({
             {nav.items.map((item, i) => (
               <li key={item.id} className="border-b border-line">
                 <a
-                  href={`#${item.id}`}
+                  href={`${base}#${item.id}`}
                   onClick={() => setOpen(false)}
                   className="flex items-baseline gap-4 py-4 text-3xl font-semibold tracking-tight"
                 >

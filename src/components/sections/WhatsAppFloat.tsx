@@ -18,7 +18,7 @@ export function WhatsAppFloat({ label }: { label: string }) {
     <div
       inert={!show}
       className={cn(
-        "fixed bottom-5 right-5 z-40 transition-all duration-500 sm:bottom-7 sm:right-7",
+        "fixed bottom-[5.5rem] right-5 z-40 transition-all duration-500 sm:bottom-[6.5rem] sm:right-7",
         show ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0",
       )}
     >
