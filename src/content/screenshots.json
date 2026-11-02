@@ -1,1 +1,70 @@
-{}
+{
+  "acs-calvert": [
+    "desktop",
+    "mobile"
+  ],
+  "bloom": [
+    "desktop",
+    "mobile"
+  ],
+  "don-corte-fino": [
+    "desktop",
+    "mobile"
+  ],
+  "fabrizio": [
+    "desktop",
+    "mobile"
+  ],
+  "fabrizio-19": [
+    "desktop",
+    "mobile"
+  ],
+  "firu-walk": [
+    "desktop",
+    "mobile"
+  ],
+  "fogo-de-chao": [
+    "desktop",
+    "mobile"
+  ],
+  "fuerzaflow": [
+    "desktop",
+    "mobile"
+  ],
+  "haras-la-alhambra": [
+    "desktop",
+    "mobile"
+  ],
+  "helibol": [
+    "desktop",
+    "mobile"
+  ],
+  "iker-torrico": [
+    "desktop",
+    "mobile"
+  ],
+  "restobar-os": [
+    "desktop",
+    "mobile"
+  ],
+  "sccs-sis": [
+    "desktop",
+    "mobile"
+  ],
+  "sccs-store": [
+    "desktop",
+    "mobile"
+  ],
+  "sccs-student-os": [
+    "desktop",
+    "mobile"
+  ],
+  "sccs-website": [
+    "desktop",
+    "mobile"
+  ],
+  "spc": [
+    "desktop",
+    "mobile"
+  ]
+}
