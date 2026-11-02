@@ -19,7 +19,6 @@ declare global {
  *  - [data-count="123"]       animated counter
  *  - [data-parallax="0.15"]   scroll parallax
  *  - [data-draw="x" | "y"]    line that draws with scroll progress
- *  - [data-rail-section]      pinned horizontal project rail (desktop only)
  *  - [data-timeline]          process timeline with the robot walking down it
  *  - .spotlight               cursor-following glow on cards
  * Everything is skipped for prefers-reduced-motion; content stays fully visible.
@@ -64,39 +63,7 @@ export function MotionRoot() {
     if (prefersReducedMotion()) return;
     const { gsap, ScrollTrigger } = getGsap();
 
-    const mm = gsap.matchMedia();
     const ctx = gsap.context(() => {
-      // 1. Pinned horizontal project rail — created first so later triggers account for its pin spacing.
-      mm.add("(min-width: 1024px)", () => {
-        const section = document.querySelector<HTMLElement>("[data-rail-section]");
-        const track = section?.querySelector<HTMLElement>("[data-rail-track]");
-        if (!section || !track) return;
-        section.dataset.rail = "on";
-        const distance = () => Math.max(0, track.scrollWidth - document.documentElement.clientWidth);
-        const progress = section.querySelector<HTMLElement>("[data-rail-progress]");
-        const tl = gsap.timeline({
-          defaults: { ease: "none" },
-          scrollTrigger: {
-            trigger: section,
-            start: "top top",
-            end: () => `+=${distance()}`,
-            pin: true,
-            scrub: 0.8,
-            invalidateOnRefresh: true,
-            anticipatePin: 1,
-          },
-        });
-        tl.to(track, { x: () => -distance() }, 0);
-        if (progress) tl.fromTo(progress, { scaleX: 0 }, { scaleX: 1 }, 0);
-        // subtle skew/tilt on the cards while moving
-        track.querySelectorAll<HTMLElement>("[data-rail-card]").forEach((card, i) => {
-          tl.fromTo(card, { y: i % 2 ? 24 : -8 }, { y: i % 2 ? -8 : 24 }, 0);
-        });
-        return () => {
-          delete section.dataset.rail;
-        };
-      });
-
       // 2. Reveals
       gsap.set("[data-reveal]", { y: 28 });
       ScrollTrigger.batch("[data-reveal]", {
@@ -199,7 +166,6 @@ export function MotionRoot() {
     return () => {
       window.removeEventListener("load", refresh);
       ctx.revert();
-      mm.revert();
     };
   }, [pathname]);
 

@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="es" data-composition-variables='[{"id":"lang","type":"enum","label":"Language","default":"es","options":[{"value":"es","label":"Español"},{"value":"en","label":"English"}]}]'>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="assets/gsap.min.js"></script>
+<style>
+  :root { --night:#0a0c0b; --green:#19e36b; --ember:#ff7a3d; --ink:#0a0f0c; --mist:#f2f6f3; --muted:#5c6862; --line:#e3e9e5; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1920px; height:1080px; overflow:hidden; background:var(--night); }
+  #root { position:relative; width:100%; height:100%; font-family:Inter, sans-serif; color:#fff; overflow:hidden; }
+  .bg { position:absolute; inset:0; background:radial-gradient(55% 65% at 80% 25%, rgba(255,122,61,.18), transparent 70%), radial-gradient(50% 60% at 15% 95%, rgba(25,227,107,.12), transparent 70%), var(--night); }
+  .gridbg { position:absolute; inset:0; background-image:linear-gradient(to right, rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px); background-size:80px 80px; }
+  .scene { position:absolute; inset:0; }
+  .mono { font-family:"JetBrains Mono", monospace; }
+  .eyebrow { font-family:"JetBrains Mono", monospace; font-size:24px; letter-spacing:.16em; text-transform:uppercase; color:var(--green); display:flex; align-items:center; gap:16px; }
+  .eyebrow i { display:block; width:44px; height:2px; background:var(--green); }
+  .eyebrow.warm { color:var(--ember); } .eyebrow.warm i { background:var(--ember); }
+  .title { font-weight:700; letter-spacing:-.035em; line-height:1.02; }
+  .title em { font-style:normal; color:var(--green); }
+  .title b { font-weight:700; color:var(--ember); }
+  .w { display:inline-block; }
+  .ticket { position:absolute; width:260px; background:#fffdf6; color:var(--ink); border-radius:6px; padding:22px; box-shadow:0 30px 70px -20px rgba(0,0,0,.6); font-family:"JetBrains Mono", monospace; font-size:18px; }
+  .ticket .h { font-weight:700; font-size:22px; border-bottom:2px dashed #cfc6b0; padding-bottom:10px; margin-bottom:10px; }
+  .ticket .l { display:flex; justify-content:space-between; padding:4px 0; }
+  .phone { position:absolute; width:430px; height:880px; border-radius:64px; background:#111; padding:16px; box-shadow:0 60px 140px -30px rgba(0,0,0,.7), 0 0 0 2px #2a2f2c; }
+  .screen { width:100%; height:100%; border-radius:50px; background:#fff; color:var(--ink); overflow:hidden; position:relative; }
+  .notch { position:absolute; top:14px; left:50%; width:120px; height:34px; margin-left:-60px; border-radius:20px; background:#111; z-index:3; }
+  .pill { display:inline-flex; align-items:center; gap:10px; border-radius:999px; padding:10px 18px; font-size:20px; font-weight:600; }
+  .item { display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:18px; background:var(--mist); font-size:22px; font-weight:600; }
+  .qty { width:44px; height:44px; border-radius:12px; background:#fff; display:grid; place-items:center; font-family:"JetBrains Mono", monospace; font-size:18px; }
+  .col { position:absolute; top:330px; width:500px; height:620px; border-radius:28px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); padding:24px; }
+  .col .ch { display:flex; justify-content:space-between; align-items:center; font-size:24px; font-weight:700; }
+  .kt { margin-top:18px; background:#fff; color:var(--ink); border-radius:20px; padding:20px 22px; }
+  .kt .top { display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:22px; }
+  .kt .tm { font-family:"JetBrains Mono", monospace; font-size:22px; border-radius:10px; padding:4px 10px; background:var(--mist); }
+  .kt .ln { font-size:20px; color:var(--muted); margin-top:8px; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="25" data-width="1920" data-height="1080">
+  <div class="bg"></div>
+  <div class="gridbg"></div>
+
+  <!-- ───────── A · Saturday night chaos ───────── -->
+  <div id="ra" class="scene clip" data-start="0" data-duration="5.2" data-track-index="1">
+    <div id="ra-t1" class="ticket" style="left:170px; top:90px;"><div class="h" data-t="tk1"></div><div class="l"><span data-t="d1"></span><span>×2</span></div><div class="l"><span data-t="d2"></span><span>×1</span></div><div class="l" style="text-decoration:line-through;color:#a33"><span data-t="d3"></span><span>×3</span></div></div>
+    <div id="ra-t2" class="ticket" style="left:520px; top:150px;"><div class="h" data-t="tk2"></div><div class="l"><span data-t="d4"></span><span>×1</span></div><div class="l"><span>???</span><span>×2</span></div><div class="l"><span data-t="d5"></span><span>×4</span></div></div>
+    <div id="ra-t3" class="ticket" style="left:860px; top:70px;"><div class="h" data-t="tk3"></div><div class="l"><span data-t="d1"></span><span>×1</span></div><div class="l"><span data-t="d6"></span><span>×2</span></div></div>
+    <div id="ra-toast" style="position:absolute; left:1250px; top:120px; width:520px; background:#fff; color:var(--ink); border-radius:24px; padding:24px 26px; box-shadow:0 40px 100px -20px rgba(0,0,0,.6);">
+      <div style="display:flex; align-items:center; gap:14px;"><div style="width:52px;height:52px;border-radius:50%;background:#ffe6da;display:grid;place-items:center;font-size:26px">🍽</div><div><div style="font-weight:700;font-size:24px" data-t="toastT"></div><div style="font-size:19px;color:var(--muted)" data-t="toastS"></div></div><div id="ra-min" class="mono" style="margin-left:auto;font-weight:700;font-size:26px;color:#c2410c">25′</div></div>
+    </div>
+    <div id="ra-tape" style="position:absolute; left:1340px; top:330px; width:330px; background:#fff; color:var(--ink); border-radius:6px 6px 0 0; padding:24px; font-family:'JetBrains Mono', monospace; font-size:21px; box-shadow:0 40px 100px -20px rgba(0,0,0,.6);">
+      <div style="font-weight:700" data-t="tapeT"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px"><span data-t="tape1"></span><span>8.330</span></div>
+      <div style="display:flex;justify-content:space-between"><span data-t="tape2"></span><span>8.450</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;border-top:2px dashed #ccc;padding-top:10px;color:#b42318;font-weight:700"><span data-t="tape3"></span><span>−120 ?</span></div>
+    </div>
+    <div id="ra-copy" style="position:absolute; left:170px; bottom:110px; width:1580px;">
+      <div class="eyebrow warm"><i></i><span data-t="aEye"></span></div>
+      <div id="ra-title" class="title" style="font-size:84px; margin-top:22px;"></div>
+    </div>
+  </div>
+
+  <!-- ───────── B · waiter phone ───────── -->
+  <div id="rb" class="scene clip" data-start="5" data-duration="5.8" data-track-index="2">
+    <div id="rb-copy" style="position:absolute; left:170px; top:250px; width:820px;">
+      <div class="eyebrow"><i></i><span>RestoBar OS</span></div>
+      <div id="rb-title" class="title" style="font-size:80px; margin-top:22px;"></div>
+      <div id="rb-sub" style="font-size:30px; line-height:1.4; color:rgba(255,255,255,.7); margin-top:28px;" data-t="bSub"></div>
+    </div>
+    <div id="rb-phone" class="phone" style="left:1180px; top:100px;"><div class="screen"><div class="notch"></div>
+      <div style="padding:70px 26px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:18px;color:var(--muted)" data-t="waiter"></div><div style="font-size:34px;font-weight:800;letter-spacing:-.02em" data-t="table"></div></div><span class="pill" style="background:#dcfce8;color:#04562a;font-size:18px">PIN ✓</span></div>
+        <div style="display:grid;gap:12px;margin-top:26px">
+          <div id="rb-i1" class="item"><span class="qty">×2</span><span data-t="d1"></span></div>
+          <div id="rb-i2" class="item"><span class="qty">×1</span><span data-t="d2"></span></div>
+          <div id="rb-i3" class="item"><span class="qty">×3</span><span data-t="d3"></span></div>
+          <div id="rb-sug" class="item" style="background:#fff7ed;border:2px dashed #fdba74;color:#9a3412"><span class="qty" style="background:#ffedd5">+</span><span data-t="sug"></span></div>
+        </div>
+      </div>
+      <div id="rb-send" style="position:absolute; left:26px; right:26px; bottom:40px; background:var(--ink); color:#fff; border-radius:22px; padding:26px; text-align:center; font-weight:700; font-size:26px;"><span data-t="send"></span> <span style="color:#19e36b">→</span></div>
+    </div></div>
+    <div id="rb-fly" class="ticket" style="left:1260px; top:420px; width:240px; opacity:0"><div class="h" data-t="tk7"></div><div class="l"><span data-t="d1"></span><span>×2</span></div></div>
+  </div>
+
+  <!-- ───────── C · kitchen display ───────── -->
+  <div id="rc" class="scene clip" data-start="10.8" data-duration="5" data-track-index="3">
+    <div id="rc-copy" style="position:absolute; left:170px; top:110px; width:1600px;">
+      <div class="eyebrow"><i></i><span data-t="cEye"></span></div>
+      <div id="rc-title" class="title" style="font-size:68px; margin-top:22px;"></div>
+    </div>
+    <div id="rc-c1" class="col" style="left:170px;"><div class="ch"><span data-t="st1"></span><span class="mono" style="font-size:18px;color:rgba(255,255,255,.5)">2</span></div>
+      <div id="rc-k1" class="kt"><div class="top"><span data-t="tk7"></span><span id="rc-tm1" class="tm">00:00</span></div><div class="ln"><span data-t="d1"></span> ×2</div></div>
+      <div id="rc-k2" class="kt"><div class="top"><span data-t="tk2"></span><span class="tm">06:40</span></div><div class="ln"><span data-t="d4"></span> ×1</div></div>
+    </div>
+    <div id="rc-c2" class="col" style="left:710px;"><div class="ch"><span data-t="st2"></span><span class="mono" style="font-size:18px;color:rgba(255,255,255,.5)">1</span></div>
+      <div id="rc-k3" class="kt"><div class="top"><span data-t="tk7"></span><span id="rc-tm3" class="tm">00:00</span></div><div class="ln"><span data-t="d2"></span> ×1</div></div>
+    </div>
+    <div id="rc-c3" class="col" style="left:1250px;"><div class="ch"><span data-t="st3"></span><span class="mono" style="font-size:18px;color:rgba(255,255,255,.5)">1</span></div>
+      <div id="rc-k4" class="kt"><div class="top"><span data-t="tk7"></span><span id="rc-tm4" class="tm">00:00</span></div><div class="ln"><span data-t="d3"></span> ×3</div><div id="rc-ready" class="pill" style="margin-top:14px;background:#19e36b;color:var(--ink)" data-t="ready"></div></div>
+    </div>
+  </div>
+
+  <!-- ───────── D · close in WhatsApp ───────── -->
+  <div id="rd" class="scene clip" data-start="15.8" data-duration="4.8" data-track-index="4">
+    <div id="rd-copy" style="position:absolute; left:170px; top:260px; width:820px;">
+      <div class="eyebrow"><i></i><span data-t="dEye"></span></div>
+      <div id="rd-title" class="title" style="font-size:80px; margin-top:22px;"></div>
+      <div id="rd-sub" style="font-size:30px; line-height:1.4; color:rgba(255,255,255,.7); margin-top:28px;" data-t="dSub"></div>
+    </div>
+    <div id="rd-phone" class="phone" style="left:1180px; top:100px;"><div class="screen" style="background:#efe7de"><div class="notch"></div>
+      <div style="background:#075e54;color:#fff;padding:66px 24px 18px;display:flex;align-items:center;gap:14px"><div style="width:48px;height:48px;border-radius:50%;background:#19e36b;color:var(--ink);font-weight:900;display:grid;place-items:center">R</div><div><div style="font-weight:700;font-size:22px">RestoBar OS</div><div style="font-size:16px;opacity:.8">23:58</div></div></div>
+      <div id="rd-msg" style="margin:28px 22px; background:#fff; border-radius:0 22px 22px 22px; padding:22px 24px; font-size:22px; line-height:1.55; box-shadow:0 2px 0 rgba(0,0,0,.08)">
+        <div style="font-weight:800" data-t="m0"></div>
+        <div id="rd-l1" style="display:flex;justify-content:space-between;margin-top:8px"><span data-t="m1"></span><b id="rd-sales">Bs 0</b></div>
+        <div id="rd-l2" style="display:flex;justify-content:space-between"><span data-t="m2"></span><b>2</b></div>
+        <div id="rd-l3" style="display:flex;justify-content:space-between"><span data-t="m3"></span><b style="color:#067a37">✓</b></div>
+        <div id="rd-l4" style="display:flex;justify-content:space-between"><span data-t="m4"></span><b data-t="d1"></b></div>
+        <div style="text-align:right;font-size:15px;color:#999;margin-top:6px">23:58 ✓✓</div>
+      </div>
+      <div id="rd-demo" class="mono" style="position:absolute;bottom:28px;left:0;right:0;text-align:center;font-size:15px;color:#8a8a8a" data-t="demo"></div>
+    </div></div>
+  </div>
+
+  <!-- ───────── E · end card ───────── -->
+  <div id="re" class="scene clip" data-start="20.6" data-duration="4.4" data-track-index="5">
+    <div id="re-flood" style="position:absolute; left:1395px; top:540px; width:10px; height:10px; margin:-5px 0 0 -5px; border-radius:50%; background:#19e36b;"></div>
+    <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:var(--ink);">
+      <div id="re-eye" class="mono" style="font-size:24px; letter-spacing:.16em; text-transform:uppercase; font-weight:700" data-t="eEye"></div>
+      <div id="re-title" class="title" style="font-size:132px; margin-top:26px; color:var(--ink); max-width:1100px"></div>
+      <div id="re-cta" class="pill" style="margin-top:56px; background:var(--ink); color:#fff; font-size:34px; padding:26px 44px;"><span data-t="cta"></span><span style="color:#19e36b">→</span></div>
+      <div id="re-brand" style="margin-top:40px; font-size:24px; font-weight:600; opacity:.75">Elevated Tech · Santa Cruz de la Sierra</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const COPY = {
+    es: {
+      tk1: "MESA 4", tk2: "MESA 9", tk3: "MESA 2", tk7: "MESA 7",
+      d1: "Picanha", d2: "Majadito batido", d3: "Limonada", d4: "Pique macho", d5: "Chela", d6: "Sopa de maní",
+      toastT: "Mesa 4: ¿y mi pedido?", toastS: "Nadie sabe en qué cocina quedó", tapeT: "CIERRE DE CAJA", tape1: "Contado", tape2: "Vendido", tape3: "Diferencia",
+      aEye: "Sábado · 21:30", aTitle: ["Comandas", "perdidas.", "Caja", "que", "no", "cuadra.", "<b>Y</b>", "<b>el</b>", "<b>cierre,</b>", "<b>a</b>", "<b>medianoche.</b>"],
+      bTitle: ["El", "mesero", "pide", "<em>desde</em>", "<em>su</em>", "<em>celular.</em>"], bSub: "Sin comprar tablets. Cada uno entra con su PIN y el sistema sugiere el postre.",
+      waiter: "Luis · mesero", table: "Mesa 7", sug: "Sugerido: Tres leches", send: "Enviar a cocina",
+      cEye: "Pantalla de cocina", cTitle: ["Cada", "comanda", "llega", "a", "su", "estación,", "<em>con</em>", "<em>reloj.</em>"], st1: "Parrilla", st2: "Cocina", st3: "Barra", ready: "✓ Listo",
+      dEye: "Reporte diario", dTitle: ["El", "cierre", "del", "día,", "<em>en</em>", "<em>tu</em>", "<em>WhatsApp.</em>"], dSub: "Ventas, anulaciones y caja. Sin quedarte en el local hasta medianoche.",
+      m0: "📊 Cierre · Sábado", m1: "Ventas", m2: "Anulaciones (con PIN)", m3: "Caja cuadrada", m4: "Plato estrella", demo: "datos de demostración",
+      eEye: "Elevated Tech · Restaurantes", eTitle: ["Tu", "restaurante,", "bajo", "control."], cta: "Agenda una llamada gratis"
+    },
+    en: {
+      tk1: "TABLE 4", tk2: "TABLE 9", tk3: "TABLE 2", tk7: "TABLE 7",
+      d1: "Picanha", d2: "Majadito", d3: "Lemonade", d4: "Pique macho", d5: "Beer", d6: "Peanut soup",
+      toastT: "Table 4: where's my food?", toastS: "Nobody knows which station has it", tapeT: "CASH CLOSE", tape1: "Counted", tape2: "Sold", tape3: "Difference",
+      aEye: "Saturday · 9:30 p.m.", aTitle: ["Lost", "tickets.", "A", "register", "that", "won't", "balance.", "<b>And</b>", "<b>closing</b>", "<b>at</b>", "<b>midnight.</b>"],
+      bTitle: ["Waiters", "order", "<em>from</em>", "<em>their</em>", "<em>phone.</em>"], bSub: "No tablets to buy. Everyone signs in with a PIN, and the system suggests dessert.",
+      waiter: "Luis · waiter", table: "Table 7", sug: "Suggested: Tres leches", send: "Send to kitchen",
+      cEye: "Kitchen display", cTitle: ["Every", "ticket", "reaches", "its", "station,", "<em>on</em>", "<em>the</em>", "<em>clock.</em>"], st1: "Grill", st2: "Kitchen", st3: "Bar", ready: "✓ Ready",
+      dEye: "Daily report", dTitle: ["Your", "daily", "close,", "<em>on</em>", "<em>WhatsApp.</em>"], dSub: "Sales, voids and cash. Without staying at the restaurant until midnight.",
+      m0: "📊 Close · Saturday", m1: "Sales", m2: "Voids (PIN)", m3: "Register balanced", m4: "Best seller", demo: "demo data",
+      eEye: "Elevated Tech · Restaurants", eTitle: ["Your", "restaurant,", "under", "control."], cta: "Book a free call"
+    }
+  };
+  const vars = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {};
+  const L = COPY[vars.lang === "en" ? "en" : "es"];
+  document.documentElement.lang = vars.lang === "en" ? "en" : "es";
+  document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = L[el.dataset.t] ?? ""; });
+  const words = (id, arr) => { const el = document.getElementById(id); el.innerHTML = arr.map((w) => '<span class="w">' + w + '</span>').join(" "); return el.querySelectorAll(".w"); };
+  const aW = words("ra-title", L.aTitle), bW = words("rb-title", L.bTitle), cW = words("rc-title", L.cTitle), dW = words("rd-title", L.dTitle), eW = words("re-title", L.eTitle);
+
+  const tl = gsap.timeline({ paused: true });
+  const wordsIn = (els, at, gap = 0.08) => tl.fromTo(els, { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out", stagger: gap }, at);
+  const clock = (id, from, to, at, dur) => { const o = { s: from }; tl.fromTo(o, { s: from }, { s: to, duration: dur, ease: "none", immediateRender: false, onUpdate: () => { const s = Math.round(o.s); document.getElementById(id).textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); } }, at); };
+
+  // A
+  [["#ra-t1", -8, 0.1], ["#ra-t2", 6, 0.35], ["#ra-t3", -4, 0.6]].forEach(([s, r, t]) =>
+    tl.fromTo(s, { opacity: 0, y: -260, rotation: r * 3 }, { opacity: 1, y: 0, rotation: r, duration: 0.7, ease: "back.out(1.3)" }, t));
+  tl.fromTo("#ra-toast", { opacity: 0, x: 120 }, { opacity: 1, x: 0, duration: 0.6, ease: "expo.out" }, 1.0);
+  tl.fromTo("#ra-tape", { opacity: 0, y: 80 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, 1.35);
+  tl.fromTo("#ra-toast", { x: 0 }, { x: 10, duration: 0.06, repeat: 5, yoyo: true, immediateRender: false }, 2.2);
+  tl.fromTo("#ra-copy .eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 1.5);
+  wordsIn(aW, 1.7, 0.07);
+  tl.to(["#ra-t1", "#ra-t2", "#ra-t3", "#ra-toast", "#ra-tape"], { y: 1100, rotation: (i) => [20, -14, 10, -6, 8][i], duration: 0.55, ease: "power3.in", stagger: 0.03 }, 4.45);
+  tl.to(aW, { opacity: 0, filter: "blur(8px)", duration: 0.2, stagger: 0.015 }, 4.5);
+  tl.to("#ra-copy .eyebrow", { opacity: 0, duration: 0.2 }, 4.5);
+
+  // B (absolute = 5 + t)
+  const B = 5;
+  tl.fromTo("#rb-phone", { opacity: 0, y: 900, rotation: 8 }, { opacity: 1, y: 0, rotation: 0, duration: 0.8, ease: "expo.out" }, B + 0.05);
+  tl.fromTo("#rb-copy .eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.3 }, B + 0.3);
+  wordsIn(bW, B + 0.4);
+  tl.fromTo("#rb-sub", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.3 }, B + 1.1);
+  ["#rb-i1", "#rb-i2", "#rb-i3"].forEach((s, i) => tl.fromTo(s, { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.45, ease: "expo.out" }, B + 1.0 + i * 0.45));
+  tl.fromTo("#rb-sug", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.6)" }, B + 2.6);
+  tl.fromTo("#rb-send", { scale: 1 }, { scale: 0.93, duration: 0.1, yoyo: true, repeat: 1 }, B + 3.6);
+  tl.fromTo("#rb-fly", { opacity: 0, x: 0, y: 0, rotation: 0, scale: 0.6 }, { opacity: 1, x: 120, y: -40, rotation: 6, scale: 1, duration: 0.35, ease: "expo.out" }, B + 3.8);
+  tl.to("#rb-fly", { x: 900, y: -300, rotation: 18, opacity: 0, duration: 0.5, ease: "power3.in" }, B + 4.4);
+  tl.to(["#rb-phone"], { x: 700, opacity: 0, duration: 0.45, ease: "power3.in" }, B + 5.3);
+  tl.to(["#rb-copy"], { opacity: 0, filter: "blur(8px)", duration: 0.2 }, B + 5.35);
+
+  // C
+  const C = 10.8;
+  tl.fromTo("#rc-copy .eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.3 }, C + 0.1);
+  wordsIn(cW, C + 0.15, 0.07);
+  ["#rc-c1", "#rc-c2", "#rc-c3"].forEach((s, i) => tl.fromTo(s, { opacity: 0, y: 120 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, C + 0.2 + i * 0.1));
+  tl.fromTo("#rc-k2", { opacity: 0 }, { opacity: 1, duration: 0.3 }, C + 0.5);
+  ["#rc-k1", "#rc-k3", "#rc-k4"].forEach((s, i) => tl.fromTo(s, { opacity: 0, y: -60, scale: 0.9 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.5)" }, C + 1.1 + i * 0.22));
+  clock("rc-tm1", 0, 252, C + 1.2, 3.4); clock("rc-tm3", 0, 248, C + 1.4, 3.3); clock("rc-tm4", 0, 95, C + 1.6, 1.5);
+  tl.fromTo("#rc-ready", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.8)" }, C + 3.2);
+  tl.fromTo("#rc-k4", { boxShadow: "0 0 0 0 rgba(25,227,107,0)" }, { boxShadow: "0 0 0 6px rgba(25,227,107,.9)", duration: 0.3, immediateRender: false }, C + 3.2);
+  tl.to(["#rc-c1", "#rc-c2", "#rc-c3", "#rc-copy"], { opacity: 0, filter: "blur(12px)", y: -40, duration: 0.35, ease: "power3.in" }, C + 4.6);
+
+  // D
+  const D = 15.8;
+  tl.fromTo("#rd-phone", { opacity: 0, y: 900, rotation: -8 }, { opacity: 1, y: 0, rotation: 0, duration: 0.8, ease: "expo.out" }, D + 0.05);
+  tl.fromTo("#rd-copy .eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.3 }, D + 0.3);
+  wordsIn(dW, D + 0.35);
+  tl.fromTo("#rd-sub", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.3 }, D + 1.1);
+  tl.fromTo("#rd-msg", { opacity: 0, scale: 0.85, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: "back.out(1.5)" }, D + 1.0);
+  ["#rd-l1", "#rd-l2", "#rd-l3", "#rd-l4"].forEach((s, i) => tl.fromTo(s, { opacity: 0 }, { opacity: 1, duration: 0.25 }, D + 1.3 + i * 0.25));
+  const sales = { v: 0 };
+  tl.fromTo(sales, { v: 0 }, { v: 8450, duration: 1.4, ease: "power3.out", onUpdate: () => { document.getElementById("rd-sales").textContent = "Bs " + Math.round(sales.v).toLocaleString("es-BO"); } }, D + 1.3);
+  tl.fromTo("#rd-demo", { opacity: 0 }, { opacity: 1, duration: 0.3 }, D + 2.2);
+  tl.to("#rd-copy", { opacity: 0, filter: "blur(8px)", duration: 0.2 }, D + 4.4);
+
+  // E · flood from the phone
+  const E = 20.6;
+  tl.fromTo("#re-flood", { scale: 30 }, { scale: 460, duration: 0.55, ease: "power2.inOut" }, E);
+  tl.fromTo("#re-eye", { opacity: 0 }, { opacity: 1, duration: 0.3 }, E + 0.45);
+  tl.fromTo(eW, { opacity: 0.12 }, { opacity: 1, duration: 0.12, stagger: 0.09 }, E + 0.55);
+  tl.fromTo("#re-cta", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.5, ease: "expo.out" }, E + 1.2);
+  tl.fromTo("#re-brand", { opacity: 0 }, { opacity: 0.75, duration: 0.4 }, E + 1.5);
+
+  window.__timelines = window.__timelines || {};
+  window.__timelines["main"] = tl;
+  tl.seek(0);
+</script>
+</body>
+</html>

@@ -33,4 +33,8 @@ export const events = {
   leadFormSubmit: "lead_form_submit",
   heroSlideChange: "hero_slide_change",
   languageSwitch: "language_switch",
+  projectPreview: "project_preview",
+  projectVisit: "project_visit",
+  projectFilter: "project_filter",
+  filmPlay: "film_play",
 } as const;

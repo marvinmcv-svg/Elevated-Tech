@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="es" data-composition-variables='[{"id":"lang","type":"enum","label":"Language","default":"es","options":[{"value":"es","label":"Español"},{"value":"en","label":"English"}]}]'>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="assets/gsap.min.js"></script>
+<style>
+  :root { --night:#07100b; --night2:#0d1a13; --green:#19e36b; --ink:#0a0f0c; --paper:#ffffff; --mist:#f2f6f3; --muted:#5c6862; --line:#e3e9e5; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1920px; height:1080px; overflow:hidden; background:var(--night); }
+  #root { position:relative; width:100%; height:100%; font-family:Inter, sans-serif; color:#fff; overflow:hidden; }
+  .bg { position:absolute; inset:0; background:radial-gradient(60% 70% at 78% 30%, rgba(25,227,107,.20), transparent 70%), radial-gradient(50% 60% at 10% 100%, rgba(25,227,107,.10), transparent 70%), var(--night); }
+  .gridbg { position:absolute; inset:0; background-image:linear-gradient(to right, rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.045) 1px, transparent 1px); background-size:80px 80px; }
+  .scene { position:absolute; inset:0; }
+  .mono { font-family:"JetBrains Mono", monospace; }
+  .eyebrow { font-family:"JetBrains Mono", monospace; font-size:24px; letter-spacing:.16em; text-transform:uppercase; color:var(--green); display:flex; align-items:center; gap:16px; }
+  .eyebrow i { display:block; width:44px; height:2px; background:var(--green); }
+  .title { font-weight:700; letter-spacing:-.035em; line-height:1.02; }
+  .title em { font-style:normal; color:var(--green); }
+  .w { display:inline-block; }
+  .win { position:absolute; background:#fff; color:var(--ink); border-radius:22px; box-shadow:0 50px 120px -30px rgba(0,0,0,.6); overflow:hidden; }
+  .bar { height:46px; display:flex; align-items:center; gap:10px; padding:0 18px; background:#f4f6f5; border-bottom:1px solid var(--line); font-size:18px; color:var(--muted); }
+  .dot { width:13px; height:13px; border-radius:50%; }
+  .r{background:#ff5f57}.y{background:#febc2e}.g{background:#28c840}
+  .pill { display:inline-flex; align-items:center; gap:10px; border-radius:999px; padding:10px 18px; font-size:20px; font-weight:600; }
+  .row { display:flex; align-items:center; }
+  .sk { height:14px; border-radius:7px; background:#e8edea; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="25" data-width="1920" data-height="1080">
+  <div class="bg"></div>
+  <div class="gridbg"></div>
+
+  <!-- ───────── Scene A · the problem ───────── -->
+  <div id="sa" class="scene clip" data-start="0" data-duration="5.2" data-track-index="1">
+    <div id="sa-cam" style="position:absolute; inset:0;">
+      <!-- SIS maze -->
+      <div id="sa-sis" class="win" style="left:150px; top:110px; width:760px; height:430px;">
+        <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span style="margin-left:14px" data-t="sisBar"></span></div>
+        <div class="row" style="gap:6px; padding:12px 14px 0; font-size:15px; color:var(--muted)">
+          <span style="background:#e8edea;padding:6px 10px;border-radius:8px 8px 0 0">Gradebook</span><span style="background:#f3f5f4;padding:6px 10px;border-radius:8px 8px 0 0">Attendance</span><span style="background:#f3f5f4;padding:6px 10px;border-radius:8px 8px 0 0">Log entry</span><span style="background:#f3f5f4;padding:6px 10px;border-radius:8px 8px 0 0">Demographics</span><span style="background:#f3f5f4;padding:6px 10px;border-radius:8px 8px 0 0">+8</span>
+        </div>
+        <div style="padding:16px 18px; display:grid; grid-template-columns:repeat(6,1fr); gap:8px;">
+          <div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+          <div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+          <div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+          <div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+          <div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+          <div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+        </div>
+      </div>
+      <!-- paper referral -->
+      <div id="sa-paper" class="win" style="left:1000px; top:90px; width:440px; height:520px; background:#fbf6e9; border-radius:6px;">
+        <div style="padding:34px 34px 0; font-family:'EB Garamond', serif; font-size:30px; font-weight:700;" data-t="paperTitle"></div>
+        <div style="padding:22px 34px; display:grid; gap:18px;">
+          <div style="height:2px;background:#cdbf9f"></div><div style="height:2px;background:#cdbf9f"></div><div style="height:2px;background:#cdbf9f"></div><div style="height:2px;background:#cdbf9f"></div><div style="height:2px;background:#cdbf9f"></div><div style="height:2px;background:#cdbf9f"></div><div style="height:2px;background:#cdbf9f"></div>
+        </div>
+        <div id="sa-stamp" style="position:absolute; right:30px; bottom:46px; border:4px solid #d4372c; color:#d4372c; font-weight:900; font-size:30px; padding:8px 16px; border-radius:8px; letter-spacing:.08em;" data-t="stamp"></div>
+      </div>
+      <!-- whatsapp -->
+      <div id="sa-wa" class="win" style="left:1470px; top:230px; width:380px; padding:22px; border-radius:26px;">
+        <div class="row" style="gap:14px;"><div style="width:52px;height:52px;border-radius:50%;background:#25d366;display:grid;place-items:center;color:#fff;font-weight:800;font-size:24px">W</div><div><div style="font-weight:700;font-size:22px" data-t="waTitle"></div><div style="font-size:18px;color:var(--muted)" data-t="waSub"></div></div></div>
+        <div style="margin-top:18px; display:flex; justify-content:space-between; align-items:center"><span style="font-size:18px;color:var(--muted)" data-t="waUnread"></span><span id="sa-badge" style="background:#25d366;color:#fff;font-weight:800;border-radius:999px;padding:6px 14px;font-size:22px">37</span></div>
+      </div>
+      <!-- spreadsheet -->
+      <div id="sa-xls" class="win" style="left:560px; top:440px; width:620px; height:300px;">
+        <div class="bar" style="background:#e9f5ee"><span style="color:#107c41;font-weight:700">X</span><span>conducta_FINAL_v3 (2).xlsx</span></div>
+        <div style="display:grid; grid-template-columns:repeat(5,1fr);">
+          <div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line);background:#fff3c4"></div><div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div>
+          <div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line);background:#ffd9d6"></div><div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div>
+          <div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line);background:#fff3c4"></div><div style="height:40px;border:1px solid var(--line)"></div>
+          <div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div>
+          <div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line);background:#ffd9d6"></div><div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div><div style="height:40px;border:1px solid var(--line)"></div>
+        </div>
+      </div>
+    </div>
+    <div id="sa-copy" style="position:absolute; left:150px; bottom:110px; width:1500px;">
+      <div id="sa-eye" class="eyebrow"><i></i><span data-t="aEye"></span></div>
+      <div id="sa-title" class="title" style="font-size:84px; margin-top:22px;"></div>
+    </div>
+    <div id="sa-dark" style="position:absolute; inset:0; background:var(--night); opacity:0"></div>
+  </div>
+
+  <!-- ───────── Scene B · one workspace ───────── -->
+  <div id="sb" class="scene clip" data-start="5" data-duration="6.2" data-track-index="2">
+    <div id="sb-copy" style="position:absolute; left:150px; top:120px; width:560px;">
+      <div class="eyebrow"><i></i><span data-t="bEye"></span></div>
+      <div id="sb-title" class="title" style="font-size:72px; margin-top:22px;"></div>
+      <div id="sb-sub" style="font-size:28px; line-height:1.4; color:rgba(255,255,255,.7); margin-top:26px;" data-t="bSub"></div>
+    </div>
+    <div id="sb-app" class="win" style="left:780px; top:120px; width:1000px; height:780px; border-radius:28px;">
+      <div class="row" style="height:72px; padding:0 26px; gap:16px; border-bottom:1px solid var(--line)">
+        <div style="width:38px;height:38px;border-radius:10px;background:var(--ink);color:var(--green);display:grid;place-items:center;font-weight:900">S</div>
+        <div style="font-weight:700;font-size:22px">Student OS</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:10px;background:var(--mist);border-radius:12px;padding:10px 16px;font-size:18px;color:var(--muted);width:340px"><span>⌕</span><span data-t="search"></span><span class="mono" style="margin-left:auto;font-size:15px;border:1px solid var(--line);border-radius:6px;padding:2px 8px">Ctrl K</span></div>
+      </div>
+      <div style="display:grid; grid-template-columns:200px 1fr; height:708px;">
+        <div style="border-right:1px solid var(--line); padding:22px 18px; display:grid; gap:12px; align-content:start; font-size:19px; color:var(--muted)">
+          <div style="background:var(--mist);color:var(--ink);font-weight:600;border-radius:10px;padding:10px 12px" data-t="nav1"></div>
+          <div style="padding:10px 12px" data-t="nav2"></div><div style="padding:10px 12px" data-t="nav3"></div><div style="padding:10px 12px" data-t="nav4"></div><div style="padding:10px 12px" data-t="nav5"></div>
+        </div>
+        <div style="position:relative; padding:28px;">
+          <!-- profile -->
+          <div id="sb-profile" style="display:grid; grid-template-columns:1fr 1fr; gap:22px;">
+            <div style="grid-column:span 2; display:flex; align-items:center; gap:20px; border:1px solid var(--line); border-radius:20px; padding:22px;">
+              <div style="width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#19e36b,#067a37);color:#fff;font-weight:800;font-size:32px;display:grid;place-items:center">MR</div>
+              <div><div style="font-size:32px;font-weight:700">Mateo Rojas</div><div style="font-size:19px;color:var(--muted);margin-top:4px" data-t="grade"></div></div>
+              <div style="margin-left:auto;display:flex;gap:10px"><span class="pill" style="background:#ede9fe;color:#5b21b6">IEP</span><span class="pill" style="background:#dcfce8;color:#04562a" data-t="bilingual"></span></div>
+            </div>
+            <div style="border:1px solid var(--line); border-radius:20px; padding:24px;">
+              <div style="font-size:18px;color:var(--muted);font-weight:600" data-t="risk"></div>
+              <div class="row" style="gap:16px;margin-top:14px"><div id="sb-score" style="font-size:72px;font-weight:800;letter-spacing:-.04em">62</div><div id="sb-trend" class="pill" style="background:#ffe4e1;color:#b42318" data-t="riskHigh"></div></div>
+              <div style="height:12px;border-radius:6px;background:var(--mist);margin-top:12px;overflow:hidden"><div id="sb-bar" style="height:100%;width:62%;background:#f97066;border-radius:6px"></div></div>
+            </div>
+            <div style="border:1px solid var(--line); border-radius:20px; padding:24px; display:grid; gap:12px; align-content:start; font-size:19px;">
+              <div style="font-size:18px;color:var(--muted);font-weight:600" data-t="why"></div>
+              <div class="row" style="gap:10px"><span style="color:#b42318">●</span><span data-t="why1"></span></div>
+              <div class="row" style="gap:10px"><span style="color:#b42318">●</span><span data-t="why2"></span></div>
+              <div id="sb-why3" class="row" style="gap:10px"><span style="color:#067a37">●</span><span data-t="why3"></span></div>
+            </div>
+            <div style="grid-column:span 2; border:1px solid var(--line); border-radius:20px; padding:22px; display:flex; gap:14px; align-items:center; font-size:19px">
+              <span style="font-weight:600" data-t="acc"></span><span class="pill" style="background:var(--mist);color:var(--ink);font-size:17px" data-t="acc1"></span><span class="pill" style="background:var(--mist);color:var(--ink);font-size:17px" data-t="acc2"></span>
+            </div>
+          </div>
+          <!-- command palette -->
+          <div id="sb-k" style="position:absolute; left:90px; top:40px; width:600px; background:#fff; border-radius:20px; box-shadow:0 40px 100px -20px rgba(0,0,0,.45), 0 0 0 1px var(--line); overflow:hidden;">
+            <div class="row" style="gap:12px; padding:20px 22px; font-size:26px; border-bottom:1px solid var(--line)"><span style="color:var(--muted)">⌕</span><span id="sb-typed" style="font-weight:600"></span><span id="sb-caret" style="width:2px;height:30px;background:var(--ink)"></span></div>
+            <div id="sb-res" style="padding:10px;">
+              <div class="row" style="gap:14px; background:#f0fdf5; border-radius:12px; padding:14px; font-size:21px"><div style="width:40px;height:40px;border-radius:50%;background:#19e36b;color:#fff;font-weight:800;display:grid;place-items:center;font-size:16px">MR</div><b>Mateo Rojas</b><span style="color:var(--muted)" data-t="grade"></span><span style="margin-left:auto;color:var(--muted)">↵</span></div>
+              <div class="row" style="gap:14px; padding:14px; font-size:21px; color:var(--muted)"><div style="width:40px;height:40px;border-radius:50%;background:var(--mist)"></div>Mateo Rivera<span data-t="grade2"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────── Scene C · two taps ───────── -->
+  <div id="sc" class="scene clip" data-start="11" data-duration="5.4" data-track-index="3">
+    <div id="sc-copy" style="position:absolute; left:150px; top:120px; width:1600px;">
+      <div class="eyebrow"><i></i><span data-t="cEye"></span></div>
+      <div id="sc-title" class="title" style="font-size:80px; margin-top:22px;"></div>
+    </div>
+    <!-- referral card -->
+    <div id="sc-ref" class="win" style="left:150px; top:420px; width:780px; padding:36px; border-radius:28px;">
+      <div style="font-size:20px;color:var(--muted);font-weight:600" data-t="refHead"></div>
+      <div class="row" style="gap:14px;margin-top:18px"><span class="pill" style="background:var(--ink);color:#fff">2.04</span><span style="font-size:30px;font-weight:700" data-t="refCode"></span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px">
+        <div style="background:var(--mist);border-radius:16px;padding:18px"><div style="font-size:17px;color:var(--muted)" data-t="refPen"></div><div id="sc-pen" style="font-size:26px;font-weight:700;margin-top:6px" data-t="refPenV"></div></div>
+        <div style="background:var(--mist);border-radius:16px;padding:18px"><div style="font-size:17px;color:var(--muted)">IEP</div><div style="font-size:26px;font-weight:700;margin-top:6px" data-t="refIep"></div></div>
+      </div>
+      <div class="row" style="margin-top:26px;gap:16px">
+        <div id="sc-tap1" style="flex:1;text-align:center;background:var(--ink);color:#fff;border-radius:16px;padding:20px;font-size:24px;font-weight:700" data-t="refBtn"></div>
+        <div id="sc-ok" class="pill" style="background:#dcfce8;color:#04562a;font-size:22px" data-t="refOk"></div>
+      </div>
+    </div>
+    <!-- recognition -->
+    <div id="sc-rec" class="win" style="left:1000px; top:420px; width:770px; padding:36px; border-radius:28px;">
+      <div style="font-size:20px;color:var(--muted);font-weight:600" data-t="recHead"></div>
+      <div class="row" style="gap:18px;margin-top:20px">
+        <div id="sc-star" style="width:96px;height:96px;border-radius:24px;background:#19e36b;display:grid;place-items:center;font-size:52px;color:var(--ink)">★</div>
+        <div><div style="font-size:30px;font-weight:700" data-t="recTitle"></div><div style="font-size:20px;color:var(--muted);margin-top:6px" data-t="recSub"></div></div>
+      </div>
+      <div style="margin-top:28px;font-size:18px;color:var(--muted);font-weight:600" data-t="ratio"></div>
+      <div class="row" style="gap:16px;margin-top:10px"><div style="flex:1;height:18px;border-radius:9px;background:var(--mist);overflow:hidden"><div id="sc-ratio" style="height:100%;width:40%;background:#19e36b;border-radius:9px"></div></div><div id="sc-ratioN" class="mono" style="font-size:26px;font-weight:700">2:1</div></div>
+    </div>
+  </div>
+
+  <!-- ───────── Scene D · ecosystem ───────── -->
+  <div id="sd" class="scene clip" data-start="16.2" data-duration="4.6" data-track-index="4">
+    <svg id="sd-lines" width="1920" height="1080" style="position:absolute;inset:0" fill="none">
+      <path id="sd-l1" d="M960 600 L470 380" stroke="#19e36b" stroke-width="3" stroke-dasharray="560" stroke-dashoffset="560"/>
+      <path id="sd-l2" d="M960 600 L1450 380" stroke="#19e36b" stroke-width="3" stroke-dasharray="560" stroke-dashoffset="560"/>
+      <path id="sd-l3" d="M960 600 L470 830" stroke="#19e36b" stroke-width="3" stroke-dasharray="560" stroke-dashoffset="560"/>
+      <path id="sd-l4" d="M960 600 L1450 830" stroke="#19e36b" stroke-width="3" stroke-dasharray="560" stroke-dashoffset="560"/>
+    </svg>
+    <div id="sd-copy" style="position:absolute; left:0; right:0; top:100px; text-align:center;">
+      <div class="eyebrow" style="justify-content:center"><i></i><span data-t="dEye"></span><i></i></div>
+      <div id="sd-title" class="title" style="font-size:76px; margin-top:20px;"></div>
+    </div>
+    <div id="sd-core" style="position:absolute; left:820px; top:530px; width:280px; height:140px; border-radius:28px; background:#19e36b; color:var(--ink); display:grid; place-items:center; text-align:center; font-weight:800; font-size:34px; box-shadow:0 0 120px rgba(25,227,107,.5)" data-t="core"></div>
+    <div id="sd-t1" class="win" style="left:250px; top:320px; width:440px; padding:26px 28px;"><div class="mono" style="font-size:16px;color:#067a37;font-weight:700">01 · SIS</div><div style="font-size:28px;font-weight:700;margin-top:8px" data-t="t1"></div><div style="font-size:19px;color:var(--muted);margin-top:6px" data-t="t1s"></div></div>
+    <div id="sd-t2" class="win" style="left:1230px; top:320px; width:440px; padding:26px 28px;"><div class="mono" style="font-size:16px;color:#067a37;font-weight:700">02 · STUDENT OS</div><div style="font-size:28px;font-weight:700;margin-top:8px" data-t="t2"></div><div style="font-size:19px;color:var(--muted);margin-top:6px" data-t="t2s"></div></div>
+    <div id="sd-t3" class="win" style="left:250px; top:770px; width:440px; padding:26px 28px;"><div class="mono" style="font-size:16px;color:#067a37;font-weight:700">03 · WEB</div><div style="font-size:28px;font-weight:700;margin-top:8px" data-t="t3"></div><div style="font-size:19px;color:var(--muted);margin-top:6px" data-t="t3s"></div></div>
+    <div id="sd-t4" class="win" style="left:1230px; top:770px; width:440px; padding:26px 28px;"><div class="mono" style="font-size:16px;color:#067a37;font-weight:700">04 · STORE</div><div style="font-size:28px;font-weight:700;margin-top:8px" data-t="t4"></div><div style="font-size:19px;color:var(--muted);margin-top:6px" data-t="t4s"></div></div>
+  </div>
+
+  <!-- ───────── Scene E · end card ───────── -->
+  <div id="se" class="scene clip" data-start="20.8" data-duration="4.2" data-track-index="5">
+    <div id="se-flood" style="position:absolute; left:960px; top:600px; width:10px; height:10px; margin:-5px 0 0 -5px; border-radius:50%; background:#19e36b;"></div>
+    <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:var(--ink);">
+      <div id="se-eye" class="mono" style="font-size:24px; letter-spacing:.16em; text-transform:uppercase; font-weight:700" data-t="eEye"></div>
+      <div id="se-title" class="title" style="font-size:132px; margin-top:26px; color:var(--ink); max-width:1150px"></div>
+      <div id="se-cta" class="pill" style="margin-top:56px; background:var(--ink); color:#fff; font-size:34px; padding:26px 44px;"><span data-t="cta"></span><span style="color:#19e36b">→</span></div>
+      <div id="se-brand" style="margin-top:40px; font-size:24px; font-weight:600; opacity:.75">Elevated Tech · Santa Cruz de la Sierra</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const COPY = {
+    es: {
+      sisBar: "Sistema académico · 12 pestañas abiertas", paperTitle: "Hoja de reporte de conducta", stamp: "PENDIENTE",
+      waTitle: "Grupo de padres · 8.º B", waSub: "¿A qué hora es la reunión?", waUnread: "Mensajes sin leer",
+      aEye: "Lunes · 7:42 a.m.", aTitle: ["Doce", "pestañas,", "papeles", "y", "37", "mensajes.", "<em>Antes</em>", "<em>de</em>", "<em>la</em>", "<em>primera</em>", "<em>clase.</em>"],
+      bEye: "Student OS", bTitle: ["Todo", "el", "alumno,", "en", "una", "<em>sola</em>", "<em>pantalla.</em>"], bSub: "Conducta, apoyo al aprendizaje y alertas tempranas. Lo encuentras en un segundo con Ctrl K.",
+      search: "Buscar alumno…", nav1: "Hoy", nav2: "Alumnos", nav3: "Reportes", nav4: "Reconocimientos", nav5: "Apoyo",
+      typed: "Mateo R", grade: "8.º B · Secundaria", grade2: " · 3.º A", bilingual: "Bilingüe",
+      risk: "Alerta temprana", riskHigh: "Atención", riskOk: "Mejorando", why: "Por qué", why1: "3 atrasos esta semana", why2: "Nota de Matemáticas bajó", why3: "+2 reconocimientos",
+      acc: "Adecuaciones:", acc1: "Tiempo extra en exámenes", acc2: "Asiento adelante",
+      cEye: "Reportes y reconocimientos", cTitle: ["Un", "reporte", "en", "dos", "toques.", "<em>Un</em>", "<em>“bien</em>", "<em>hecho”</em>", "<em>en</em>", "<em>uno.</em>"],
+      refHead: "Nuevo reporte · Mateo Rojas", refCode: "Atraso injustificado", refPen: "Sanción sugerida", refPenV: "Aviso a padres", refIep: "Se respeta el plan", refBtn: "Registrar", refOk: "✓ Igual que el SIS",
+      recHead: "Reconocimiento", recTitle: "¡Ayudó a un compañero!", recSub: "Mateo Rojas · hace 1 min", ratio: "Positivos vs. reportes (PBIS)",
+      dEye: "Un solo ecosistema", dTitle: ["Hecho", "a", "medida", "para", "<em>tu</em>", "<em>colegio.</em>"], core: "Tu colegio",
+      t1: "Sistema académico", t1s: "Notas, asistencia y libretas", t2: "Student OS", t2s: "Conducta y apoyo al alumno", t3: "Web de admisiones", t3s: "Más familias, mejor informadas", t4: "Tienda de uniformes", t4s: "Compra en línea, recoge en el colegio",
+      eEye: "Elevated Tech · Colegios", eTitle: ["Menos", "papeleo.", "Más", "enseñanza."], cta: "Agenda una llamada gratis"
+    },
+    en: {
+      sisBar: "Student information system · 12 tabs open", paperTitle: "Behavior referral form", stamp: "PENDING",
+      waTitle: "Grade 8B parents", waSub: "What time is the meeting?", waUnread: "Unread messages",
+      aEye: "Monday · 7:42 a.m.", aTitle: ["Twelve", "tabs,", "paper", "forms", "and", "37", "messages.", "<em>Before</em>", "<em>first</em>", "<em>period.</em>"],
+      bEye: "Student OS", bTitle: ["The", "whole", "student,", "on", "<em>one</em>", "<em>screen.</em>"], bSub: "Behavior, learning support and early warning. Find anyone in a second with Ctrl K.",
+      search: "Find a student…", nav1: "Today", nav2: "Students", nav3: "Referrals", nav4: "Recognition", nav5: "Support",
+      typed: "Mateo R", grade: "Grade 8B · Middle School", grade2: " · Grade 3A", bilingual: "Bilingual",
+      risk: "Early warning", riskHigh: "Watch", riskOk: "Improving", why: "Why", why1: "3 tardies this week", why2: "Math grade dropped", why3: "+2 recognitions",
+      acc: "Accommodations:", acc1: "Extra time on tests", acc2: "Front-row seat",
+      cEye: "Referrals and recognition", cTitle: ["A", "referral", "in", "two", "taps.", "<em>A</em>", "<em>“well</em>", "<em>done”</em>", "<em>in</em>", "<em>one.</em>"],
+      refHead: "New referral · Mateo Rojas", refCode: "Unexcused tardy", refPen: "Suggested consequence", refPenV: "Parent notice", refIep: "Plan respected", refBtn: "Log it", refOk: "✓ Matches the SIS",
+      recHead: "Recognition", recTitle: "Helped a classmate!", recSub: "Mateo Rojas · 1 min ago", ratio: "Positives vs. referrals (PBIS)",
+      dEye: "One ecosystem", dTitle: ["Built", "around", "<em>your</em>", "<em>school.</em>"], core: "Your school",
+      t1: "Student information system", t1s: "Grades, attendance, report cards", t2: "Student OS", t2s: "Behavior and student support", t3: "Admissions website", t3s: "More families, better informed", t4: "Uniform store", t4s: "Buy online, pick up at school",
+      eEye: "Elevated Tech · Schools", eTitle: ["Less", "paperwork.", "More", "teaching."], cta: "Book a free call"
+    }
+  };
+  const vars = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {};
+  const L = COPY[vars.lang === "en" ? "en" : "es"];
+  document.documentElement.lang = vars.lang === "en" ? "en" : "es";
+  document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = L[el.dataset.t] ?? ""; });
+  const words = (id, arr) => { document.getElementById(id).innerHTML = arr.map((w) => `<span class="w">${w}</span>`).join(" "); return document.getElementById(id).querySelectorAll(".w"); };
+  const aW = words("sa-title", L.aTitle), bW = words("sb-title", L.bTitle), cW = words("sc-title", L.cTitle), dW = words("sd-title", L.dTitle), eW = words("se-title", L.eTitle);
+
+  const tl = gsap.timeline({ paused: true });
+  const IN = { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" };
+  const wordsIn = (els, at, gap = 0.08) => tl.fromTo(els, { opacity: 0, filter: "blur(8px)" }, { ...IN, stagger: gap }, at);
+
+  // A · chaos
+  const pops = [["#sa-sis", -3, 0.15], ["#sa-paper", 4, 0.55], ["#sa-wa", -2, 0.95], ["#sa-xls", 2, 1.3]];
+  pops.forEach(([s, r, t]) => tl.fromTo(s, { opacity: 0, scale: 0.86, rotation: r * 2, y: 60 }, { opacity: 1, scale: 1, rotation: r, y: 0, duration: 0.7, ease: "back.out(1.4)" }, t));
+  tl.fromTo("#sa-stamp", { opacity: 0, scale: 2.2, rotation: -24 }, { opacity: 1, scale: 1, rotation: -12, duration: 0.3, ease: "power4.in" }, 1.1);
+  const badge = { n: 12 };
+  tl.fromTo(badge, { n: 12 }, { n: 37, duration: 2.2, ease: "power2.out", onUpdate: () => { document.getElementById("sa-badge").textContent = Math.round(badge.n); } }, 1.0);
+  tl.fromTo("#sa-eye", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 1.4);
+  wordsIn(aW, 1.6, 0.07);
+  tl.fromTo("#sa-cam", { scale: 1 }, { scale: 1.06, duration: 3, ease: "none" }, 1.6);
+  tl.to(["#sa-sis", "#sa-paper", "#sa-wa", "#sa-xls"], { x: (i) => [500, -150, -700, 100][i], y: (i) => [260, 220, 140, -60][i], scale: 0.05, opacity: 0, filter: "blur(14px)", duration: 0.6, ease: "power3.in", stagger: 0.04 }, 4.35);
+  tl.to(aW, { opacity: 0, filter: "blur(8px)", duration: 0.2, stagger: 0.02 }, 4.4);
+  tl.to("#sa-eye", { opacity: 0, duration: 0.2 }, 4.4);
+
+  // B · Student OS (scene-local times → absolute = 5 + t)
+  const B = 5;
+  tl.fromTo("#sb-app", { opacity: 0, scale: 0.2, x: -200, y: 120, filter: "blur(12px)" }, { opacity: 1, scale: 1, x: 0, y: 0, filter: "blur(0px)", duration: 0.75, ease: "expo.out" }, B + 0.05);
+  tl.fromTo("#sb-copy .eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.3 }, B + 0.4);
+  wordsIn(bW, B + 0.5);
+  tl.fromTo("#sb-sub", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.3 }, B + 1.3);
+  tl.fromTo("#sb-profile", { opacity: 0.25, filter: "blur(4px)" }, { opacity: 0.25, filter: "blur(4px)", duration: 0.01 }, B);
+  tl.fromTo("#sb-k", { opacity: 0, y: -20, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: "expo.out" }, B + 0.9);
+  tl.fromTo("#sb-res", { opacity: 0 }, { opacity: 0, duration: 0.01 }, B + 0.9);
+  const typed = { n: 0 };
+  tl.fromTo(typed, { n: 0 }, { n: L.typed.length, duration: 0.8, ease: "none", onUpdate: () => { document.getElementById("sb-typed").textContent = L.typed.slice(0, Math.round(typed.n)); } }, B + 1.3);
+  tl.to("#sb-res", { opacity: 1, duration: 0.2 }, B + 2.0);
+  tl.to("#sb-k", { opacity: 0, scale: 0.97, y: -10, duration: 0.25, ease: "power3.in" }, B + 2.6);
+  tl.to("#sb-profile", { opacity: 1, filter: "blur(0px)", duration: 0.35, ease: "power2.out" }, B + 2.7);
+  const score = { v: 62 };
+  tl.fromTo("#sb-why3", { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.4, ease: "expo.out" }, B + 3.5);
+  tl.fromTo(score, { v: 62 }, { v: 28, duration: 1.2, ease: "power3.out", onUpdate: () => {
+      const v = Math.round(score.v); document.getElementById("sb-score").textContent = v;
+      const bar = document.getElementById("sb-bar"); bar.style.width = v + "%"; bar.style.background = v < 40 ? "#19e36b" : "#f97066";
+      const tr = document.getElementById("sb-trend"); const ok = v < 40; tr.textContent = ok ? L.riskOk : L.riskHigh; tr.style.background = ok ? "#dcfce8" : "#ffe4e1"; tr.style.color = ok ? "#04562a" : "#b42318";
+    } }, B + 3.8);
+  tl.to(["#sb-app"], { x: 900, opacity: 0, filter: "blur(16px)", duration: 0.4, ease: "power3.in" }, B + 5.75);
+  tl.to(["#sb-copy"], { opacity: 0, filter: "blur(8px)", duration: 0.2 }, B + 5.75);
+
+  // C · two taps
+  const C = 11;
+  tl.fromTo("#sc-copy .eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.3 }, C + 0.1);
+  wordsIn(cW, C + 0.2, 0.07);
+  tl.fromTo("#sc-ref", { opacity: 0, x: -400, filter: "blur(14px)" }, { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, C + 0.05);
+  tl.fromTo("#sc-rec", { opacity: 0, x: 400, filter: "blur(14px)" }, { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, C + 0.2);
+  tl.fromTo("#sc-pen", { opacity: 0 }, { opacity: 1, duration: 0.25 }, C + 1.4);
+  tl.fromTo("#sc-tap1", { scale: 1 }, { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1 }, C + 2.0);
+  tl.fromTo("#sc-ok", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.6)" }, C + 2.25);
+  tl.fromTo("#sc-star", { scale: 0.4, rotation: -30 }, { scale: 1, rotation: 0, duration: 0.6, ease: "back.out(1.7)" }, C + 2.6);
+  const ratio = { v: 2 };
+  tl.fromTo(ratio, { v: 2 }, { v: 4, duration: 1.2, ease: "power3.out", onUpdate: () => { document.getElementById("sc-ratioN").textContent = Math.round(ratio.v) + ":1"; document.getElementById("sc-ratio").style.width = (ratio.v * 20) + "%"; } }, C + 2.8);
+  tl.to(["#sc-ref", "#sc-rec"], { scale: 0.3, opacity: 0, x: (i) => (i ? -260 : 260), y: 60, filter: "blur(12px)", duration: 0.5, ease: "power3.in" }, C + 4.75);
+  tl.to("#sc-copy", { opacity: 0, filter: "blur(8px)", duration: 0.2 }, C + 4.8);
+
+  // D · ecosystem
+  const D = 16.2;
+  tl.fromTo("#sd-core", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.5)" }, D + 0.05);
+  tl.fromTo("#sd-copy .eyebrow", { opacity: 0 }, { opacity: 1, duration: 0.3 }, D + 0.2);
+  wordsIn(dW, D + 0.3);
+  ["#sd-l1", "#sd-l2", "#sd-l3", "#sd-l4"].forEach((s, i) => tl.fromTo(s, { strokeDashoffset: 560 }, { strokeDashoffset: 0, duration: 0.6, ease: "power2.inOut" }, D + 0.6 + i * 0.18));
+  ["#sd-t1", "#sd-t2", "#sd-t3", "#sd-t4"].forEach((s, i) => tl.fromTo(s, { opacity: 0, scale: 0.85, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: "expo.out" }, D + 0.9 + i * 0.18));
+  tl.to(["#sd-t1", "#sd-t2", "#sd-t3", "#sd-t4", "#sd-lines", "#sd-copy"], { opacity: 0, filter: "blur(10px)", duration: 0.3 }, D + 4.15);
+
+  // E · end card (colour flood from the core)
+  const E = 20.8;
+  tl.fromTo("#se-flood", { scale: 28 }, { scale: 460, duration: 0.55, ease: "power2.inOut" }, E);
+  tl.fromTo("#se-eye", { opacity: 0 }, { opacity: 1, duration: 0.3 }, E + 0.45);
+  tl.fromTo(eW, { opacity: 0.12 }, { opacity: 1, duration: 0.12, stagger: 0.09 }, E + 0.55);
+  tl.fromTo("#se-cta", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.5, ease: "expo.out" }, E + 1.2);
+  tl.fromTo("#se-brand", { opacity: 0 }, { opacity: 0.75, duration: 0.4 }, E + 1.5);
+
+  window.__timelines = window.__timelines || {};
+  window.__timelines["main"] = tl;
+  tl.seek(0);
+</script>
+</body>
+</html>

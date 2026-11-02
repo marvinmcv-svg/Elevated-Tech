@@ -2,6 +2,7 @@ import "server-only";
 import { es } from "@/content/es";
 import { en } from "@/content/en";
 import { services } from "@/content/services";
+import { projects } from "@/content/portfolio";
 import { site } from "@/lib/site";
 
 /**
@@ -56,9 +57,10 @@ function companyKnowledge() {
     t.restaurant.story,
     ...t.restaurant.features.map((f) => `- ${f.title}: ${f.body}`),
     "",
-    "## Proyectos (casos reales)",
-    ...t.projects.items.map((p) => `- ${p.title} (${p.category}): ${p.outcome} Estado: ${t.projects.status[p.status as keyof typeof t.projects.status]}.`),
-    `Caso destacado: ${t.projects.spotlight.title} ${t.projects.spotlight.body} ${t.projects.spotlight.points.join("; ")}.`,
+    "## Proyectos (casos reales, todos en vivo; se pueden abrir desde la sección Portafolio)",
+    ...projects.map((p) => `- ${p.name} (${p.type.es}, ${p.city}): Problema: ${p.problem.es} Solución: ${p.solution.es} Link: ${p.url}`),
+    `Caso destacado colegios: ${t.schools.title} ${t.schools.body}`,
+    ...t.schools.pains.map((p) => `- Antes: ${p.pain}. Ahora: ${p.fix}.`),
     "",
     "## Preguntas frecuentes generales",
     ...t.faq.items.map((f) => `P: ${f.q}\nR: ${f.a}`),
