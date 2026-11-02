@@ -6,6 +6,8 @@
  * the featured sections and El-IAs all read from this file.
  */
 
+import shots from "./screenshots.json";
+
 type T = { es: string; en: string };
 
 export type Category = "schools" | "restaurants" | "brands" | "apps" | "portfolios";
@@ -597,3 +599,15 @@ export const films = {
     projects: ["restobar-os", "fogo-de-chao", "don-corte-fino"],
   },
 } as const;
+
+/* ───────────── Real screenshots (captured by scripts/screenshots.cjs) ───────────── */
+const shotIndex = shots as Record<string, string[] | undefined>;
+
+/** Paths of the real screenshots of a project, when they have been captured. */
+export function screenshotsOf(key: string): { desktop?: string; mobile?: string } {
+  const got = shotIndex[key] ?? [];
+  return {
+    desktop: got.includes("desktop") ? `/projects/${key}.webp` : undefined,
+    mobile: got.includes("mobile") ? `/projects/${key}-m.webp` : undefined,
+  };
+}

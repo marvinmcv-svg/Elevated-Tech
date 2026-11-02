@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
@@ -133,6 +133,54 @@ function Particles({ count = 900 }: { count?: number }) {
   );
 }
 
+/**
+ * Compiles every shader once before the first frame, while all of El Camba's outfits are still
+ * visible (they're only hidden by the first applyOutfit, inside useFrame). Without this, each
+ * slide change revealed never-drawn parts and compiled their physical-material shaders on the
+ * main thread mid-animation: the multi-second hero freezes.
+ */
+function Warmup({ onDone }: { onDone: () => void }) {
+  const { gl, scene, camera } = useThree();
+  useEffect(() => {
+    let alive = true;
+    // One frame later, so the studio environment map (set in a sibling effect) is in place.
+    const id = requestAnimationFrame(() => {
+      gl.compileAsync(scene, camera)
+        .catch(() => {})
+        .finally(() => alive && onDone());
+    });
+    return () => {
+      alive = false;
+      cancelAnimationFrame(id);
+    };
+  }, [gl, scene, camera, onDone]);
+  return null;
+}
+
+/**
+ * Gives up on 3D (falls back to the still renders) if the device can't hold ~24 fps.
+ * Time-based, so a very slow device bails out within ~2 s instead of after N slow frames.
+ */
+function FpsGuard({ onSlow }: { onSlow: () => void }) {
+  const s = useRef({ n: 0, time: 0, slow: 0, done: false });
+  useFrame((_, delta) => {
+    const g = s.current;
+    if (g.done) return;
+    g.n++;
+    if (g.n <= 3) return; // ignore the first frames (texture uploads, layout)
+    g.time += delta;
+    if (delta > 0.2) g.slow++; // a visible hitch
+    const frames = g.n - 3;
+    if (g.slow >= 3 || (g.time >= 0.75 && frames / g.time < 24)) {
+      g.done = true;
+      onSlow();
+    } else if (g.time >= 2.5) {
+      g.done = true; // smooth enough, stop measuring
+    }
+  });
+  return null;
+}
+
 function Rig({ shared, children }: { shared: Shared; children: React.ReactNode }) {
   const group = useRef<THREE.Group>(null);
   useFrame((_, delta) => {
@@ -150,22 +198,38 @@ export default function HeroScene({
   running,
   still = false,
   bare = false,
+  onReady,
+  onSlow,
 }: {
   shared: Shared;
   running: boolean;
   still?: boolean;
   /** Robot only, no rings or particles (for rendering cut-out stills). */
   bare?: boolean;
+  /** Shaders are compiled and the first frames are about to be drawn. */
+  onReady?: () => void;
+  /** The device can't render smoothly; the caller should fall back to the still renders. */
+  onSlow?: () => void;
 }) {
+  const [warm, setWarm] = useState(false);
+  const done = useMemo(
+    () => () => {
+      setWarm(true);
+      onReady?.();
+    },
+    [onReady],
+  );
   return (
     <Canvas
-      dpr={[1, 1.75]}
+      dpr={[1, 1.5]}
       camera={{ position: [0, 2.1, 9.6], fov: 34 }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance", preserveDrawingBuffer: still }}
-      frameloop={running ? "always" : "never"}
+      frameloop={running && warm ? "always" : "never"}
       aria-hidden="true"
     >
       <Studio />
+      <Warmup onDone={done} />
+      {onSlow && !still && <FpsGuard onSlow={onSlow} />}
       <LookAt y={0.3} />
       <Rig shared={shared}>
         <group position={[0, -0.05, 0]}>

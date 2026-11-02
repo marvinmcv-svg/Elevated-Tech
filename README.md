@@ -1,4 +1,4 @@
-# Elevated Tech: landing page
+# Elevated Tech: company website
 
 The company site for Elevated Tech, an AI solutions company in Santa Cruz de la Sierra, Bolivia. It is bilingual (Spanish by default, English), fully server-rendered for SEO, and built with Next.js, TypeScript, Tailwind CSS, GSAP and Three.js.
 
@@ -27,6 +27,33 @@ Deploy: import the repo in Vercel and add the environment variables below. No ot
 | `NEXT_PUBLIC_SHOW_PLACEHOLDERS` | `true` (default) shows the yellow **TODO** badges. Set `false` for clean previews. |
 | `ANTHROPIC_API_KEY` | Server-only. Powers El-IAs, the AI receptionist. Without it the chat hands visitors off to WhatsApp. |
 
+## Pages
+
+All pages exist in `/es` and `/en` (slugs are shared). The header, footer, lead form, preview window, WhatsApp button, El-IAs and scroll motion live once in `src/app/[locale]/layout.tsx`, so moving between pages is a fast client-side navigation.
+
+| Page | Route | Built from |
+| --- | --- | --- |
+| Home | `/[locale]` | hero, stats, services, featured work, industries, process, testimonials, FAQ, contact |
+| Services | `/[locale]/servicios` | every service with the live projects that show it |
+| Service detail | `/[locale]/servicios/[slug]` | `services.ts` + **case studies** from `serviceCases` in `src/content/pages.ts` |
+| Projects | `/[locale]/proyectos` | filterable grid of all projects |
+| Case study | `/[locale]/proyectos/[key]` | `portfolio.ts`: screenshots, challenge, solution, services used, related, next project |
+| Schools / Restaurants | `/[locale]/colegios`, `/[locale]/restaurantes` | the featured films and their projects |
+| About / Contact | `/[locale]/nosotros`, `/[locale]/contacto` | team, values, process / lead form, FAQ |
+
+Copy for the inner pages is in **`src/content/pages.ts`**. Which projects appear as case studies on each service page is `serviceCases` in the same file.
+
+## Project screenshots
+
+Thumbnails and case-study images are real screenshots of each live site (`public/projects/<key>.webp` desktop, `<key>-m.webp` phone), listed in `src/content/screenshots.json`. Until a project has one, it shows the illustrated cover. They are captured by the **Project screenshots** GitHub Action (`.github/workflows/screenshots.yml` → `scripts/screenshots.cjs`), which runs automatically when `portfolio.ts` changes and can be run by hand (Actions → Project screenshots → Run workflow, optionally with specific project keys). It commits the images back to the branch, which redeploys the site.
+
+## Tests
+
+```bash
+npm run build && npm run test:e2e   # Playwright: every page in both languages, navigation, freezes, forms
+E2E_BASE_URL=https://elevated-tech.vercel.app npm run test:e2e   # against a deployment
+```
+
 ## How it works
 
 - **Languages:** `/es` and `/en`. Visiting `/` redirects by saved choice (cookie from the ES/EN toggle), then browser language. Spanish browsers and crawlers get Spanish; everyone else gets English. All copy lives in `src/content/es.ts` (written natively) and `src/content/en.ts`.
@@ -35,8 +62,8 @@ Deploy: import the repo in Vercel and add the environment variables below. No ot
 - **Lead funnel:** every "Cotiza gratis / Start your project" button opens a short form (name, business, need, optional budget/timeline). On submit it saves the lead to `/api/lead` → `LEAD_WEBHOOK_URL`, then opens WhatsApp (+591 77165787) with a prefilled message built from the answers.
 - **Analytics events** (GA4 + `dataLayer`): `whatsapp_click` (with `location`), `lead_form_open`, `lead_form_submit`, `hero_slide_change`, `language_switch`.
 - **Motion:** `src/components/motion/MotionRoot.tsx` drives every scroll animation through data attributes (`data-reveal`, `data-split`, `data-count`, `data-parallax`, `data-draw`, the process timeline). Lenis handles smooth scrolling.
-- **3D robot ("El Camba"):** `src/components/three/Robot.tsx` is a fully procedural robot. He changes outfit with each hero slide (see `OUTFITS`), doing a quick hop-and-spin and swapping clothes while he faces away: **camba** (sombrero de paja, green neckerchief, white shirt and trousers, tari gourd at the waist), **AI receptionist** (headset, green tie, name badge, chat bubble), **web designer** (sideways cap, hoodie, jeans, floating browser window), **teacher** (glasses, bow tie, sweater vest, khakis, book) and **chef** (toque, double-breasted coat, apron, wooden spoon). He follows the pointer with head and eyes, blinks, breathes and gestures on each slide (`GESTURE_FOR_SLIDE`). Every 25–40 s, or when clicked, he dances a takirari, twirling a green pañuelo. `HeroScene.tsx` is lazy-loaded only on capable devices (WebGL2, ≥4 cores/GB, no data saver, motion allowed) and pauses when off-screen. Everyone else sees still renders, `public/robot/el-camba-0…4.webp` (one per outfit, cross-faded with the slides). `public/robot/walker.webp` is the little robot that walks down the process timeline. Re-render these if you change the robot: `<Robot still />` (and `<HeroScene still bare />` for a cut-out) freezes him in a neutral pose for screenshots.
-- **Portfolio:** every live project lives in **`src/content/portfolio.ts`** (ES + EN: problem, solution, highlights, cover colours, real headline). `Portfolio.tsx` renders a filterable grid (GSAP Flip) whose covers swap to the real site on hover; clicking opens `PreviewProvider`, a full-screen window that loads the live site at true desktop or phone size next to the case study and a "book a call" CTA. Sites that block iframes (`embed: false`) open in a new tab. Events: `project_preview`, `project_visit`, `project_filter`.
+- **3D robot ("El Camba"):** `src/components/three/Robot.tsx` is a fully procedural robot. He changes outfit with each hero slide (see `OUTFITS`), doing a quick hop-and-spin and swapping clothes while he faces away: **camba** (sombrero de paja, green neckerchief, white shirt and trousers, tari gourd at the waist), **AI receptionist** (headset, green tie, name badge, chat bubble), **web designer** (sideways cap, hoodie, jeans, floating browser window), **teacher** (glasses, bow tie, sweater vest, khakis, book) and **chef** (toque, double-breasted coat, apron, wooden spoon). He follows the pointer with head and eyes, blinks, breathes and gestures on each slide (`GESTURE_FOR_SLIDE`). Every 25–40 s, or when clicked, he dances a takirari, twirling a green pañuelo. `HeroScene.tsx` is loaded only after the page has loaded and gone idle, on capable devices (hardware WebGL2, no software renderer, ≥4 cores/GB, no data saver, motion allowed), and pauses when off-screen. It compiles every shader once up front (all outfits visible) so slide changes never compile mid-animation, and falls back to the stills if the device can't hold ~24 fps. Everyone else sees still renders, `public/robot/el-camba-0…4.webp` (one per outfit, cross-faded with the slides). `public/robot/walker.webp` is the little robot that walks down the process timeline. Re-render these if you change the robot: `<Robot still />` (and `<HeroScene still bare />` for a cut-out) freezes him in a neutral pose for screenshots.
+- **Portfolio:** every live project lives in **`src/content/portfolio.ts`** (ES + EN: problem, solution, highlights, cover colours, real headline). `Portfolio.tsx` renders a filterable grid (GSAP Flip) of screenshot thumbnails (`ProjectThumb.tsx`, served by `next/image`); each card opens the project's case-study page. "Try it live" there opens `PreviewProvider`, a full-screen window that loads the live site at true desktop or phone size. Sites that block iframes (`embed: false`) open in a new tab. Events: `project_preview`, `project_visit`, `project_filter`.
 - **Featured films (Destacado):** the schools and restaurant sections each play a 25 s HyperFrames film (`public/media/films/`, sources in `films/`, see `films/README.md`). `FilmPlayer.tsx` autoplays muted while on screen, with clickable chapters. Event: `film_play`.
 - **Services:** a dark bento grid (`ServiceCards.tsx`) where every card has its own animated scene (`ServiceVisuals.tsx`: building website, live WhatsApp chat, automation flow, app notification, dashboard, design canvas, AI content generation, social growth). The scenes are HTML/CSS/SVG, so nothing to download, and only animate while on screen.
 - **Process:** a vertical timeline; the robot walks down it as you scroll, the line fills behind him and each step lights up as he reaches it (`[data-timeline]` in `MotionRoot.tsx`).

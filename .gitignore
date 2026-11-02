@@ -10,3 +10,7 @@ next-env.d.ts
 .DS_Store
 films/*/assets/
 films/out/
+
+# Playwright
+/test-results/
+/playwright-report/

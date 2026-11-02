@@ -9,7 +9,8 @@ import { lenisStore } from "@/lib/lenis";
 import { buttonClasses, cn } from "@/lib/ui";
 import { ArrowUpRight, Check, Close } from "@/components/ui/Icons";
 import { LeadButton } from "@/components/ui/LeadButton";
-import { ProjectCover, hostOf } from "./ProjectCover";
+import { hostOf } from "./ProjectCover";
+import { ProjectThumb } from "./ProjectThumb";
 
 type Copy = Dictionary["projects"];
 const Ctx = createContext<{ openPreview: (key: string, location: string) => void }>({ openPreview: () => {} });
@@ -88,7 +89,7 @@ function LiveFrame({ project, device, loadingLabel, locale }: { project: Project
             )}
           >
             <div className="absolute inset-0">
-              <ProjectCover project={project} locale={locale} />
+              <ProjectThumb project={project} locale={locale} chrome={false} sizes="90vw" />
             </div>
             <span className="relative z-10 inline-flex items-center gap-2 rounded-full bg-ink/80 px-4 py-2 text-sm text-white backdrop-blur">
               <span className="size-3 animate-spin rounded-full border-2 border-white/30 border-t-brand" />

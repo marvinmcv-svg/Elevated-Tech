@@ -1,26 +1,44 @@
+import Link from "next/link";
 import type { Dictionary } from "@/content";
+import type { Locale } from "@/lib/i18n";
+import { services, serviceUi } from "@/content/services";
 import { site } from "@/lib/site";
 import { Logo } from "@/components/ui/Logo";
 import { TodoBadge } from "@/components/ui/Placeholder";
 import { WhatsAppLink } from "@/components/ui/WhatsAppLink";
 import { Mail, Pin, WhatsApp } from "@/components/ui/Icons";
 
-export function Footer({ copy, nav, base = "" }: { copy: Dictionary["footer"]; nav: Dictionary["nav"]; base?: string }) {
+export function Footer({ locale, copy, nav }: { locale: Locale; copy: Dictionary["footer"]; nav: Dictionary["nav"] }) {
   const year = new Date().getFullYear();
+  const home = `/${locale}`;
   return (
     <footer className="on-dark relative overflow-hidden bg-night text-white">
       <div className="container-x border-t border-white/10 py-16">
-        <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr]">
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.3fr_1.2fr_0.8fr_1.1fr]">
           <div>
-            <Logo dark />
+            <Link href={home} aria-label="Elevated Tech" className="inline-block rounded-lg">
+              <Logo dark />
+            </Link>
             <p className="mt-5 max-w-sm text-white/60">{copy.tagline}</p>
           </div>
+          <nav aria-label={serviceUi[locale].allServices}>
+            <h2 className="font-mono text-xs uppercase tracking-[0.14em] text-white/40">
+              <Link href={`${home}/servicios`} className="transition-colors hover:text-brand">{serviceUi[locale].allServices}</Link>
+            </h2>
+            <ul className="mt-5 space-y-3">
+              {services.map((s) => (
+                <li key={s.slug}>
+                  <Link href={`${home}/servicios/${s.slug}`} className="text-white/75 transition-colors hover:text-brand">{s.copy[locale].title}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
           <nav aria-label={copy.explore}>
             <h2 className="font-mono text-xs uppercase tracking-[0.14em] text-white/40">{copy.explore}</h2>
             <ul className="mt-5 space-y-3">
               {nav.items.map((i) => (
-                <li key={i.id}>
-                  <a href={`${base}#${i.id}`} className="text-white/75 transition-colors hover:text-brand">{i.label}</a>
+                <li key={i.href}>
+                  <Link href={`${home}${i.href}`} className="text-white/75 transition-colors hover:text-brand">{i.label}</Link>
                 </li>
               ))}
             </ul>

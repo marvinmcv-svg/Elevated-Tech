@@ -1,0 +1,49 @@
+name: Project screenshots
+
+# Re-captures the real screenshots used as project thumbnails and case-study images.
+# Runs when the portfolio changes, or by hand: Actions → Project screenshots → Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      keys:
+        description: "Only these project keys (space-separated). Empty = all."
+        required: false
+        default: ""
+  push:
+    paths:
+      - "src/content/portfolio.ts"
+      - "scripts/screenshots.cjs"
+      - ".github/workflows/screenshots.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright and sharp (outside the app's lockfile)
+        run: |
+          mkdir -p /tmp/shot && cd /tmp/shot && npm init -y >/dev/null
+          npm i playwright@1.48.2 sharp@0.33.5
+          npx playwright install --with-deps chromium
+      - name: Capture
+        run: NODE_PATH=/tmp/shot/node_modules node scripts/screenshots.cjs ${{ github.event.inputs.keys }}
+      - name: Commit screenshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/projects src/content/screenshots.json
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -m "Update project screenshots"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

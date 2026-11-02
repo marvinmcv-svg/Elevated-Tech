@@ -1,5 +1,7 @@
 import type { Dictionary } from "@/content";
 import type { Locale } from "@/lib/i18n";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { cn } from "@/lib/ui";
 import { films } from "@/content/portfolio";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { LeadButton } from "@/components/ui/LeadButton";
@@ -8,15 +10,16 @@ import { FilmPlayer } from "@/components/portfolio/FilmPlayer";
 import { ProjectStrip } from "@/components/portfolio/ProjectStrip";
 
 /** Featured case: restaurants (RestoBar OS + restaurant websites), explained by a HyperFrames film. */
-export function Restaurant({ copy, film, locale, need }: { copy: Dictionary["restaurant"]; film: Dictionary["film"]; locale: Locale; need: string }) {
+export function Restaurant({ copy, film, locale, need , crumbs }: { copy: Dictionary["restaurant"]; film: Dictionary["film"]; locale: Locale; need: string; crumbs?: [string, string][] }) {
   return (
-    <section id="restaurantes" className="on-dark grain relative isolate overflow-hidden bg-night py-24 text-white sm:py-32">
+    <section id="restaurantes" className={cn("on-dark grain relative isolate overflow-hidden bg-night pb-24 text-white sm:pb-32", crumbs ? "pt-28 lg:pt-36" : "pt-24 sm:pt-32")}>
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-grid-dark [mask-image:radial-gradient(ellipse_70%_60%_at_80%_30%,black,transparent)]" />
       <div aria-hidden="true" className="absolute right-[-10%] top-[12%] -z-10 size-[38rem] rounded-full bg-[#ff7a3d]/15 blur-[140px]" />
       <div aria-hidden="true" className="absolute -left-40 bottom-0 -z-10 size-[34rem] rounded-full bg-brand/20 blur-[140px]" />
       <div className="container-x">
+        {crumbs && <Breadcrumbs crumbs={crumbs} dark />}
         <div className="grid items-end gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
-          <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} dark />
+          <SectionHeader as={crumbs ? "h1" : "h2"} eyebrow={copy.eyebrow} title={copy.title} body={copy.body} dark />
           <div>
             <blockquote data-reveal className="border-l-2 border-brand pl-5 text-[15px] leading-relaxed text-white/75">{copy.story}</blockquote>
             <div data-reveal className="mt-8 flex flex-wrap gap-3">

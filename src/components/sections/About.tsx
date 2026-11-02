@@ -5,13 +5,16 @@ import { originStory, teamPhotos } from "@/content/media";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Placeholder, TodoBadge } from "@/components/ui/Placeholder";
 import { Pin } from "@/components/ui/Icons";
+import { cn } from "@/lib/ui";
 
-export function About({ copy, locale }: { copy: Dictionary["about"]; locale: Locale }) {
+/** `page` (breadcrumbs) turns the section into the top of the About page (h1, room for the header). */
+export function About({ copy, locale, page }: { copy: Dictionary["about"]; locale: Locale; page?: React.ReactNode }) {
   return (
-    <section id="nosotros" className="relative overflow-hidden bg-white py-24 sm:py-32">
+    <section id="nosotros" className={cn("relative overflow-hidden bg-white pb-24 sm:pb-32", page ? "pt-28 lg:pt-36" : "pt-24 sm:pt-32")}>
       <div className="container-x">
+        {page}
         <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-end">
-          <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} />
+          <SectionHeader as={page ? "h1" : "h2"} eyebrow={copy.eyebrow} title={copy.title} body={copy.body} />
           <div data-reveal className="lg:pb-2">
             {originStory ? (
               <p className="text-lg leading-relaxed text-ink-soft">{originStory[locale]}</p>

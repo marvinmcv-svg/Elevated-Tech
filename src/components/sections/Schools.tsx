@@ -1,5 +1,7 @@
 import type { Dictionary } from "@/content";
 import type { Locale } from "@/lib/i18n";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { cn } from "@/lib/ui";
 import { films } from "@/content/portfolio";
 import { Eyebrow } from "@/components/ui/SectionHeader";
 import { SplitText } from "@/components/ui/SplitText";
@@ -8,16 +10,17 @@ import { FilmPlayer } from "@/components/portfolio/FilmPlayer";
 import { ProjectStrip } from "@/components/portfolio/ProjectStrip";
 
 /** Featured case: the school ecosystem, explained by a HyperFrames film. */
-export function Schools({ copy, film, locale, need }: { copy: Dictionary["schools"]; film: Dictionary["film"]; locale: Locale; need: string }) {
+export function Schools({ copy, film, locale, need , crumbs }: { copy: Dictionary["schools"]; film: Dictionary["film"]; locale: Locale; need: string; crumbs?: [string, string][] }) {
   return (
-    <section id="colegios" className="relative overflow-hidden bg-white py-24 sm:py-32">
+    <section id="colegios" className={cn("relative overflow-hidden bg-white pb-24 sm:pb-32", crumbs ? "pt-28 lg:pt-36" : "pt-24 sm:pt-32")}>
       <span id="caso-ia" aria-hidden="true" className="absolute top-0" />
       <div aria-hidden="true" className="absolute inset-x-0 top-0 -z-0 h-[36rem] bg-[radial-gradient(60%_60%_at_80%_0%,rgb(25_227_107/0.10),transparent_70%)]" />
       <div className="container-x relative">
+        {crumbs && <Breadcrumbs crumbs={crumbs} />}
         <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:items-end lg:gap-16">
           <div>
             <Eyebrow>{copy.eyebrow}</Eyebrow>
-            <SplitText text={copy.title} className="mt-5 text-balance text-[clamp(2.1rem,4.8vw,3.8rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-ink" />
+            <SplitText as={crumbs ? "h1" : "h2"} text={copy.title} className="mt-5 text-balance text-[clamp(2.1rem,4.8vw,3.8rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-ink" />
           </div>
           <div>
             <p data-reveal className="text-pretty text-lg leading-relaxed text-ink-soft">{copy.body}</p>

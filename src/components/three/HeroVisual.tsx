@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/ui";
 
@@ -18,7 +18,14 @@ function canRender3D() {
   if (nav.hardwareConcurrency !== undefined && nav.hardwareConcurrency < 4) return false;
   try {
     const c = document.createElement("canvas");
-    return !!c.getContext("webgl2");
+    const gl = c.getContext("webgl2");
+    if (!gl) return false;
+    // Software rasterisers (VMs, blocklisted GPUs, Chrome's fallback) draw a few frames per second
+    // and compile shaders synchronously for seconds: always use the stills there.
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    const renderer = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return !/swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer);
   } catch {
     return false;
   }
@@ -38,14 +45,36 @@ export function HeroVisual({ shared, active, className }: { shared: Shared; acti
   const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(true);
 
+  // Start the 3D scene only once the page has fully loaded and the main thread is idle,
+  // so it never competes with first paint, hydration or the first scroll.
   useEffect(() => {
     if (!canRender3D()) {
       setMode("fallback");
       return;
     }
-    const start = () => setMode("3d");
-    if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(start, { timeout: 1500 });
-    else setTimeout(start, 400);
+    let cancelled = false;
+    let idle = 0;
+    const start = () => {
+      if (cancelled) return;
+      if (typeof window.requestIdleCallback === "function") idle = window.requestIdleCallback(() => !cancelled && setMode("3d"), { timeout: 2500 });
+      else idle = window.setTimeout(() => !cancelled && setMode("3d"), 600);
+    };
+    if (document.readyState === "complete") start();
+    else window.addEventListener("load", start, { once: true });
+    return () => {
+      cancelled = true;
+      window.removeEventListener("load", start);
+      if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idle);
+      window.clearTimeout(idle);
+    };
+  }, []);
+
+  const onReady = useCallback(() => window.setTimeout(() => setReady(true), 120), []);
+  const [slow, setSlow] = useState(false);
+  const onSlow = useCallback(() => {
+    setSlow(true); // stop drawing right away
+    setReady(false);
+    window.setTimeout(() => setMode("fallback"), 1000); // after the cross-fade back to the stills
   }, []);
 
   // Pause rendering while the hero is off-screen or the tab is hidden.
@@ -62,12 +91,6 @@ export function HeroVisual({ shared, active, className }: { shared: Shared; acti
     };
   }, []);
 
-  // Fade the canvas in once it has painted a few frames.
-  useEffect(() => {
-    if (mode !== "3d") return;
-    const t = window.setTimeout(() => setReady(true), 350);
-    return () => window.clearTimeout(t);
-  }, [mode]);
 
   return (
     <div ref={ref} data-robot-slot className={className}>
@@ -98,7 +121,7 @@ export function HeroVisual({ shared, active, className }: { shared: Shared; acti
       </div>
       {mode === "3d" && (
         <div className={cn("absolute inset-0 transition-opacity duration-1000", ready ? "opacity-100" : "opacity-0")}>
-          <HeroScene shared={shared} running={visible} />
+          <HeroScene shared={shared} running={visible && !slow} onReady={onReady} onSlow={onSlow} />
         </div>
       )}
     </div>

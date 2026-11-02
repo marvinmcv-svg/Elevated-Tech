@@ -58,6 +58,16 @@ export function MotionRoot() {
     return () => document.removeEventListener("pointermove", onMove);
   }, []);
 
+  // Client-side navigation: start the new page at the top (Lenis keeps its own scroll target).
+  useEffect(() => {
+    if (window.location.hash) return;
+    const lenis = lenisStore.get();
+    if (lenis) {
+      lenis.scrollTo(0, { immediate: true, force: true });
+      lenis.resize();
+    }
+  }, [pathname]);
+
   // Scroll-driven animations.
   useEffect(() => {
     if (prefersReducedMotion()) return;

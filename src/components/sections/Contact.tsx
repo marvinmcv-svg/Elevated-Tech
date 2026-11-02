@@ -5,16 +5,20 @@ import { SplitText } from "@/components/ui/SplitText";
 import { LeadForm } from "@/components/lead/LeadForm";
 import { WhatsAppLink } from "@/components/ui/WhatsAppLink";
 import { Pin, WhatsApp } from "@/components/ui/Icons";
+import { cn } from "@/lib/ui";
 
-export function Contact({ copy }: { copy: Dictionary["contact"] }) {
+/** `page` (breadcrumbs) turns the section into the top of the Contact page (h1, room for the header). */
+export function Contact({ copy, page }: { copy: Dictionary["contact"]; page?: React.ReactNode }) {
   return (
-    <section id="contacto" className="on-dark grain relative isolate overflow-hidden bg-night py-24 text-white sm:py-32">
+    <section id="contacto" className={cn("on-dark grain relative isolate overflow-hidden bg-night pb-24 text-white sm:pb-32", page ? "pt-28 lg:pt-36" : "pt-24 sm:pt-32")}>
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-grid-dark [mask-image:radial-gradient(ellipse_60%_70%_at_20%_40%,black,transparent)]" />
       <div aria-hidden="true" data-parallax="0.3" className="absolute -left-40 top-0 -z-10 size-[40rem] rounded-full bg-brand/30 blur-[150px]" />
       <div className="container-x grid items-start gap-14 lg:grid-cols-[1.1fr_1fr] lg:gap-20">
         <div className="lg:sticky lg:top-28">
+          {page}
           <Eyebrow dark>{copy.eyebrow}</Eyebrow>
           <SplitText
+            as={page ? "h1" : "h2"}
             text={copy.title}
             className="mt-5 text-balance text-[clamp(2.6rem,6.4vw,5.25rem)] font-semibold leading-[0.98] tracking-[-0.045em]"
           />

@@ -2,21 +2,21 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDictionary } from "@/content";
 import { getService, services, serviceUi } from "@/content/services";
-import { isLocale, locales, type Locale } from "@/lib/i18n";
+import { isLocale, locales } from "@/lib/i18n";
 import { site } from "@/lib/site";
-import { LeadFormProvider } from "@/components/lead/LeadFormProvider";
-import { MotionRoot } from "@/components/motion/MotionRoot";
-import { Header } from "@/components/sections/Header";
-import { Footer } from "@/components/sections/Footer";
+import { pageMetadata } from "@/lib/seo";
+import { pages, serviceCases } from "@/content/pages";
+import { projectByKey, type Project } from "@/content/portfolio";
 import { Process } from "@/components/sections/Process";
-import { WhatsAppFloat } from "@/components/sections/WhatsAppFloat";
-import { Elias } from "@/components/elias/Elias";
+import { ProjectCard } from "@/components/portfolio/Portfolio";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { LeadButton } from "@/components/ui/LeadButton";
 import { WhatsAppLink } from "@/components/ui/WhatsAppLink";
 import { SectionHeader, Eyebrow } from "@/components/ui/SectionHeader";
 import { SplitText } from "@/components/ui/SplitText";
 import { ArrowRight, ArrowUpRight, Check, Plus, ServiceIcon, WhatsApp } from "@/components/ui/Icons";
-import { buttonClasses } from "@/lib/ui";
+import { buttonClasses, cn } from "@/lib/ui";
+import Link from "next/link";
 
 export const dynamicParams = false;
 
@@ -28,18 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale, slug } = await params;
   const service = getService(slug);
   if (!isLocale(locale) || !service) return {};
-  const m = service.copy[locale].meta;
-  const path = `/${locale}/servicios/${slug}`;
-  return {
-    title: m.title,
-    description: m.description,
-    alternates: {
-      canonical: path,
-      languages: { es: `/es/servicios/${slug}`, en: `/en/servicios/${slug}`, "x-default": `/es/servicios/${slug}` },
-    },
-    openGraph: { type: "website", siteName: site.name, title: m.title, description: m.description, url: path },
-    twitter: { card: "summary_large_image", title: m.title, description: m.description },
-  };
+  return pageMetadata(locale, `/servicios/${slug}`, service.copy[locale].meta);
 }
 
 export default async function ServicePage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
@@ -51,7 +40,8 @@ export default async function ServicePage({ params }: { params: Promise<{ locale
   const ui = serviceUi[locale];
   const need = t.contact.form.needs[service.need];
   const home = `/${locale}`;
-  const other: Locale = locale === "es" ? "en" : "es";
+  const p = pages[locale];
+  const cases = serviceCases[service.key].map(projectByKey).filter((x): x is Project => !!x);
   const waMessage = `${t.contact.message.greeting} ${locale === "es" ? "Me interesa" : "I'm interested in"}: ${c.title}.`;
 
   const jsonLd = [
@@ -77,34 +67,21 @@ export default async function ServicePage({ params }: { params: Promise<{ locale
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: ui.breadcrumbHome, item: `${site.url}/${locale}` },
-        { "@type": "ListItem", position: 2, name: ui.allServices, item: `${site.url}/${locale}#servicios` },
+        { "@type": "ListItem", position: 2, name: ui.allServices, item: `${site.url}/${locale}/servicios` },
         { "@type": "ListItem", position: 3, name: c.title, item: `${site.url}/${locale}/servicios/${slug}` },
       ],
     },
   ];
 
   return (
-    <LeadFormProvider copy={t.contact} closeLabel={t.a11y.close}>
-      <a href="#main" className="sr-only z-[100] rounded-full bg-ink px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
-        {t.a11y.skip}
-      </a>
-      <Header locale={locale} nav={t.nav} a11y={t.a11y} base={home} altHref={`/${other}/servicios/${slug}`} />
-      <main id="main">
+    <>
         {/* ───────────── Hero ───────────── */}
         <section id="top" className="relative isolate overflow-hidden bg-white pb-20 pt-28 sm:pb-28 lg:pt-36">
           <div aria-hidden="true" className="absolute inset-0 -z-10 bg-grid [mask-image:radial-gradient(ellipse_70%_60%_at_70%_30%,black,transparent_75%)]" />
           <div aria-hidden="true" className="absolute -right-40 top-0 -z-10 size-[40rem] rounded-full bg-brand/20 blur-[120px]" />
           <div className="container-x grid items-center gap-14 lg:grid-cols-[1.25fr_0.75fr]">
             <div>
-              <nav aria-label="Breadcrumb" className="mb-8 font-mono text-xs text-muted">
-                <ol className="flex flex-wrap items-center gap-2">
-                  <li><a href={home} className="hover:text-ink">{ui.breadcrumbHome}</a></li>
-                  <li aria-hidden="true">/</li>
-                  <li><a href={`${home}#servicios`} className="hover:text-ink">{ui.allServices}</a></li>
-                  <li aria-hidden="true">/</li>
-                  <li aria-current="page" className="text-ink">{c.title}</li>
-                </ol>
-              </nav>
+              <Breadcrumbs crumbs={[[ui.breadcrumbHome, home], [ui.allServices, `${home}/servicios`], [c.title, ""]]} />
               <Eyebrow>{c.hero.eyebrow}</Eyebrow>
               <SplitText
                 as="h1"
@@ -211,6 +188,28 @@ export default async function ServicePage({ params }: { params: Promise<{ locale
           </div>
         </section>
 
+        {/* ───────────── Case studies: our live projects ───────────── */}
+        {cases.length > 0 && (
+          <section id="casos" className="relative bg-mist py-24 sm:py-32">
+            <div className="container-x">
+              <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+                <SectionHeader eyebrow={p.serviceCases.eyebrow} title={p.serviceCases.title} body={p.serviceCases.body} />
+                <div data-reveal className="shrink-0 lg:pb-2">
+                  <Link href={`${home}/proyectos`} className={cn(buttonClasses("ghost", "lg"), "group/btn bg-white")}>
+                    {p.serviceCases.allProjects}
+                    <ArrowRight className="transition-transform duration-300 group-hover/btn:translate-x-0.5" />
+                  </Link>
+                </div>
+              </div>
+              <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {cases.slice(0, 6).map((pr, i) => (
+                  <ProjectCard key={pr.key} reveal project={pr} locale={locale} copy={t.projects} index={i} caseLabel={p.serviceCases.viewCase} />
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
         {/* ───────────── Process ───────────── */}
         <Process copy={{ ...t.process, eyebrow: ui.processTitle }} />
 
@@ -269,7 +268,7 @@ export default async function ServicePage({ params }: { params: Promise<{ locale
                 .filter((s) => s.slug !== slug)
                 .map((s) => (
                   <li key={s.slug}>
-                    <a
+                    <Link
                       href={`/${locale}/servicios/${s.slug}`}
                       className="group flex items-center gap-3 rounded-2xl border border-line p-4 transition-colors hover:border-brand/40 hover:bg-brand-50/50"
                     >
@@ -278,18 +277,13 @@ export default async function ServicePage({ params }: { params: Promise<{ locale
                       </span>
                       <span className="flex-1 text-[15px] font-medium text-ink">{s.copy[locale].title}</span>
                       <ArrowUpRight className="size-4 text-muted transition-transform group-hover:rotate-45 group-hover:text-ink" />
-                    </a>
+                    </Link>
                   </li>
                 ))}
             </ul>
           </div>
         </section>
-      </main>
-      <Footer copy={t.footer} nav={t.nav} base={home} />
-      <WhatsAppFloat label={t.whatsappFloat} />
-      <Elias locale={locale} />
-      <MotionRoot />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
-    </LeadFormProvider>
+    </>
   );
 }

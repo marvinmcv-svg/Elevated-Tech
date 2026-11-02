@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import type { Dictionary } from "@/content";
+import type { Locale } from "@/lib/i18n";
 import { HeroVisual } from "@/components/three/HeroVisual";
 import { LeadButton } from "@/components/ui/LeadButton";
 import { Pause, Play } from "@/components/ui/Icons";
@@ -12,7 +14,7 @@ const DURATION = 7500;
 /** Which lead-form "need" each slide's CTA pre-selects (index into contact.form.needs). */
 const NEED_FOR_SLIDE: Array<number | undefined> = [undefined, 1, 0, 4, 5];
 
-export function Hero({ copy, needs }: { copy: Dictionary["hero"]; needs: string[] }) {
+export function Hero({ copy, needs, locale }: { copy: Dictionary["hero"]; needs: string[]; locale: Locale }) {
   const slides = copy.slides;
   const [active, setActive] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -129,9 +131,9 @@ export function Hero({ copy, needs }: { copy: Dictionary["hero"]; needs: string[
                   <LeadButton location={`hero-${i + 1}`} need={needIndex !== undefined ? needs[needIndex] : undefined} size="lg">
                     {s.primary}
                   </LeadButton>
-                  <a href={s.secondary.href} className={buttonClasses("ghost", "lg")}>
+                  <Link href={`/${locale}${s.secondary.href}`} className={buttonClasses("ghost", "lg")}>
                     {s.secondary.label}
-                  </a>
+                  </Link>
                 </div>
                 <ul data-stagger style={{ "--i": 5 } as React.CSSProperties} className="mt-8 flex flex-wrap gap-2 [@media(max-height:760px)]:hidden" aria-label={s.eyebrow}>
                   {s.chips.map((c) => (

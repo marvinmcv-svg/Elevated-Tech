@@ -23,6 +23,7 @@ export function SectionHeader({
   dark = false,
   align = "left",
   className,
+  as = "h2",
 }: {
   eyebrow: string;
   title: string;
@@ -30,11 +31,13 @@ export function SectionHeader({
   dark?: boolean;
   align?: "left" | "center";
   className?: string;
+  as?: "h1" | "h2";
 }) {
   return (
     <div className={cn("max-w-3xl", align === "center" && "mx-auto text-center", className)}>
       <Eyebrow dark={dark}>{eyebrow}</Eyebrow>
       <SplitText
+        as={as}
         text={title}
         className={cn(
           "mt-5 text-balance text-[clamp(2rem,4.6vw,3.6rem)] font-semibold leading-[1.02] tracking-[-0.035em]",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import type { Dictionary } from "@/content";
 import type { Locale } from "@/lib/i18n";
 import { categories, projects, type Category, type Project } from "@/content/portfolio";
@@ -9,77 +10,48 @@ import { getGsap, prefersReducedMotion } from "@/lib/motion";
 import { Flip } from "gsap/Flip";
 import { cn } from "@/lib/ui";
 import { ArrowRight, ArrowUpRight } from "@/components/ui/Icons";
-import { ProjectCover } from "./ProjectCover";
-import { usePreview } from "./PreviewProvider";
+import { ProjectThumb } from "./ProjectThumb";
 
 type Copy = Dictionary["projects"];
 type Filter = Category | "all";
 const FILTERS: Filter[] = ["all", "schools", "restaurants", "brands", "apps", "portfolios"];
-const INITIAL = 7;
 
-/** The real site, scaled down into the card cover. Mounted only on hover (desktop). */
-function LiveThumb({ project }: { project: Project }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const phone = project.cover.device === "phone";
-  const w = phone ? 390 : 1280;
-  const h = phone ? 844 : 800;
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const fit = () => setScale(el.clientWidth / w);
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [w]);
-  return (
-    <div ref={ref} aria-hidden="true" className={cn("pointer-events-none absolute inset-0 overflow-hidden transition-opacity duration-700", phone ? "top-0" : "top-8", loaded ? "opacity-100" : "opacity-0")}>
-      {scale > 0 && (
-        <iframe
-          src={project.url}
-          title=""
-          tabIndex={-1}
-          loading="lazy"
-          onLoad={() => setTimeout(() => setLoaded(true), 350)}
-          className="origin-top-left border-0 bg-white"
-          style={{ width: w, height: h, transform: `scale(${scale})` }}
-          sandbox="allow-scripts allow-same-origin"
-        />
-      )}
-    </div>
-  );
-}
-
-function Card({ project, locale, copy, feature, index }: { project: Project; locale: Locale; copy: Copy; feature: boolean; index: number }) {
-  const { openPreview } = usePreview();
-  const [hovered, setHovered] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const enter = () => {
-    if (!project.embed || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    timer.current = setTimeout(() => setHovered(true), 280);
-  };
-  const leave = () => {
-    if (timer.current) clearTimeout(timer.current);
-  };
-  useEffect(() => () => leave(), []);
-
+export function ProjectCard({
+  project,
+  locale,
+  copy,
+  feature = false,
+  index = 0,
+  caseLabel,
+  reveal = false,
+}: {
+  project: Project;
+  locale: Locale;
+  copy: Copy;
+  feature?: boolean;
+  index?: number;
+  caseLabel: string;
+  /** Scroll-reveal the card (when used outside the filterable grid). */
+  reveal?: boolean;
+}) {
   return (
     <li
       data-flip-id={project.key}
+      data-reveal={reveal ? "" : undefined}
       style={{ "--i": index } as React.CSSProperties}
       className={cn("pf-item", feature && "lg:col-span-2")}
     >
       <article
-        onPointerEnter={enter}
-        onPointerLeave={leave}
         className="spotlight group relative flex h-full flex-col rounded-[1.75rem] border border-line bg-white p-2.5 transition-[box-shadow,transform] duration-500 ease-[var(--ease-out-expo)] hover:-translate-y-1 hover:shadow-[0_30px_80px_-30px_rgb(10_15_12/0.3)]"
       >
         <div className="relative h-60 overflow-hidden rounded-[1.25rem] sm:h-64 lg:h-72">
           <div className="size-full transition-transform duration-[900ms] ease-[var(--ease-out-expo)] group-hover:scale-[1.025]">
-            <ProjectCover project={project} locale={locale} size={feature ? "lg" : "md"} live={hovered ? <LiveThumb project={project} /> : null} />
+            <ProjectThumb
+              project={project}
+              locale={locale}
+              size={feature ? "lg" : "md"}
+              sizes={feature ? "(min-width: 1024px) 60vw, (min-width: 640px) 50vw, 100vw" : "(min-width: 1024px) 30vw, (min-width: 640px) 50vw, 100vw"}
+            />
           </div>
           <span className="pointer-events-none absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-ink shadow-sm backdrop-blur">
             <span className="relative flex size-1.5">
@@ -90,7 +62,7 @@ function Card({ project, locale, copy, feature, index }: { project: Project; loc
           </span>
           <span className="pointer-events-none absolute inset-x-3 bottom-3 z-10 flex translate-y-3 items-center justify-center opacity-0 transition duration-500 ease-[var(--ease-out-expo)] group-hover:translate-y-0 group-hover:opacity-100">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-medium text-white shadow-lg">
-              {project.embed ? copy.preview : copy.open} <ArrowUpRight className="size-4" />
+              {caseLabel} <ArrowRight className="size-4" />
             </span>
           </span>
         </div>
@@ -102,10 +74,10 @@ function Card({ project, locale, copy, feature, index }: { project: Project; loc
             <span>{project.type[locale]}</span>
           </div>
           <h3 className="mt-2.5 text-xl font-semibold tracking-tight text-ink">
-            {/* the whole card is clickable through this button's ::after */}
-            <button type="button" onClick={() => openPreview(project.key, "portfolio")} className="text-left after:absolute after:inset-0 after:rounded-[1.75rem] after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-brand-ink">
+            {/* the whole card is clickable through this link's ::after */}
+            <Link href={`/${locale}/proyectos/${project.key}`} className="text-left after:absolute after:inset-0 after:rounded-[1.75rem] after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-brand-ink">
               {project.name}
-            </button>
+            </Link>
           </h3>
           <dl className="mt-3 grid flex-1 gap-2 text-[14.5px] leading-relaxed">
             <div className="flex gap-2.5">
@@ -119,7 +91,7 @@ function Card({ project, locale, copy, feature, index }: { project: Project; loc
           </dl>
           <div className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-4 text-sm">
             <span className="inline-flex items-center gap-1.5 font-medium text-ink">
-              {project.embed ? copy.preview : copy.open}
+              {caseLabel}
               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
             </span>
             <a
@@ -140,7 +112,7 @@ function Card({ project, locale, copy, feature, index }: { project: Project; loc
   );
 }
 
-export function Portfolio({ copy, locale }: { copy: Copy; locale: Locale }) {
+export function Portfolio({ copy, locale, caseLabel, initial = projects.length }: { copy: Copy; locale: Locale; caseLabel: string; initial?: number }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [expanded, setExpanded] = useState(false);
   const gridRef = useRef<HTMLUListElement>(null);
@@ -149,7 +121,7 @@ export function Portfolio({ copy, locale }: { copy: Copy; locale: Locale }) {
   const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
 
   const list = useMemo(() => (filter === "all" ? projects : projects.filter((p) => p.category === filter)), [filter]);
-  const visible = filter === "all" && !expanded ? list.slice(0, INITIAL) : list;
+  const visible = filter === "all" && !expanded ? list.slice(0, initial) : list;
   const hidden = list.length - visible.length;
 
   const capture = () => {
@@ -249,7 +221,7 @@ export function Portfolio({ copy, locale }: { copy: Copy; locale: Locale }) {
 
       <ul ref={gridRef} className="pf-grid mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {visible.map((p, i) => (
-          <Card key={p.key} project={p} locale={locale} copy={copy} index={i} feature={list.length >= 6 && (i === 0 || i === 5)} />
+          <ProjectCard key={p.key} project={p} locale={locale} copy={copy} index={i} caseLabel={caseLabel} feature={list.length >= 6 && (i === 0 || i === 5)} />
         ))}
       </ul>
 
