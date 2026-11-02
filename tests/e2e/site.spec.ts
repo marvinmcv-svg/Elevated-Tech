@@ -99,7 +99,8 @@ test.describe("no stuck loading states, no freezes", () => {
   test("content is visible even if scripts fail to boot", async ({ browser }) => {
     const ctx = await browser.newContext({ javaScriptEnabled: false });
     const page = await ctx.newPage();
-    await page.goto("/es/servicios");
+    // (without JS, Chrome also disables native lazy-loading, so don't wait for every image)
+    await page.goto("/es/servicios", { waitUntil: "domcontentloaded" });
     const opacity = await page.locator("[data-reveal]").first().evaluate((el) => getComputedStyle(el).opacity);
     expect(opacity).toBe("1");
     await ctx.close();
