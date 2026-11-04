@@ -373,10 +373,22 @@ const smooth = (a: number, b: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 
-type Gesture = "wave" | "present" | "tip" | "thumbs" | "takirari";
+/** Dance moves he breaks into every now and then (or when clicked), played in turn. */
+const DANCES = ["floss", "orangeJustice", "defaultDance"] as const;
+type Dance = (typeof DANCES)[number];
+type Gesture = "wave" | "present" | "tip" | "thumbs" | Dance;
 const GESTURE_FOR_SLIDE: Gesture[] = ["wave", "present", "thumbs", "present", "tip"];
-const GESTURE_LEN: Record<Gesture, number> = { wave: 2.8, present: 2.4, tip: 2.6, thumbs: 2.4, takirari: 6.8 };
-/** Takirari tempo: steps per second. */
+const GESTURE_LEN: Record<Gesture, number> = {
+  wave: 2.8,
+  present: 2.4,
+  tip: 2.6,
+  thumbs: 2.4,
+  floss: 5.6,
+  orangeJustice: 6,
+  defaultDance: 6.4,
+};
+const isDance = (g: Gesture): g is Dance => (DANCES as readonly string[]).includes(g);
+/** Dance tempo, beats per second (~126 bpm). */
 const BEAT = 2.1;
 
 /* ----------------------------------------------------------------------------------------------
@@ -409,7 +421,6 @@ export function Robot({ shared, still = false }: { shared: Shared; still?: boole
   const earGlowL = useRef<THREE.MeshStandardMaterial>(null);
   const fingersR = useRef<Array<THREE.Group | null>>([]);
   const thumbR = useRef<THREE.Group>(null);
-  const hanky = useRef<THREE.Group>(null);
   const bubble = useRef<THREE.Group>(null);
   const bubbleDots = useRef<Array<THREE.Mesh | null>>([]);
   const browser = useRef<THREE.Group>(null);
@@ -800,8 +811,9 @@ export function Robot({ shared, still = false }: { shared: Shared; still?: boole
     look: { x: 0, y: 0 },
     eye: { x: 0, y: 0, happy: 0 },
     j: {} as Record<string, number>,
-    nextDance: 14 + Math.random() * 8, // first takirari after ~15–22 s, then every 25–40 s
+    nextDance: 14 + Math.random() * 8, // first dance after ~15–22 s, then every 25–40 s
     pendingDance: false,
+    danceIndex: Math.floor(Math.random() * DANCES.length),
     outfit: -1,
     targetOutfit: 0,
     swapT: SWAP,
@@ -845,9 +857,9 @@ export function Robot({ shared, still = false }: { shared: Shared; still?: boole
     const t = s.t;
 
     s.gT += dt;
-    const dancing = s.gesture === "takirari" && s.gT < GESTURE_LEN.takirari;
+    const dancing = isDance(s.gesture) && s.gT < GESTURE_LEN[s.gesture];
     // New slide → spin into the new outfit, then the slide's gesture
-    // (a takirari in progress is never cut short)
+    // (a dance in progress is never cut short)
     if (shared.active !== s.lastSlide) {
       const first = s.lastSlide === -1;
       s.lastSlide = shared.active;
@@ -880,18 +892,17 @@ export function Robot({ shared, still = false }: { shared: Shared; still?: boole
     } else if (s.outfit !== s.targetOutfit) {
       applyOutfit(s.targetOutfit);
     }
-    // Every now and then (or when clicked) he breaks into a takirari
+    // Every now and then (or when clicked) he breaks into the next dance
     s.nextDance -= dt;
     if (s.nextDance <= 0) {
       s.pendingDance = true;
       s.nextDance = 25 + Math.random() * 15;
     }
-    if (s.pendingDance && (s.gT > GESTURE_LEN[s.gesture] - 0.4 || s.gesture !== "takirari")) {
+    if (s.pendingDance && !dancing) {
       s.pendingDance = false;
-      if (!dancing) {
-        s.gesture = "takirari";
-        s.gT = 0;
-      }
+      s.gesture = DANCES[s.danceIndex % DANCES.length];
+      s.danceIndex++;
+      s.gT = 0;
     }
     const G = s.gesture;
     const len = GESTURE_LEN[G];
@@ -934,7 +945,6 @@ export function Robot({ shared, still = false }: { shared: Shared; still?: boole
       elLz: 0,
       curl: 0,
       thumbUp: 0,
-      hanky: 0,
       rootX: 0,
       rootRY: 0,
       bounce: 0,
@@ -997,38 +1007,87 @@ export function Robot({ shared, still = false }: { shared: Shared; still?: boole
         J.headZ += 0.1 * env;
         J.torsoZ += 0.04 * env;
         J.happy = env;
-      } else if (G === "takirari") {
-        // Bouncy alternating steps, hips swaying side to side, pañuelo twirling overhead,
-        // the other hand on the hip. Happy eyes the whole time.
-        const b = s.gT * BEAT * Math.PI; // one step per half cycle
-        const step = Math.sin(b); // + → left leg up, − → right leg up
-        const up = Math.abs(step);
-        J.bounce = up * 0.07 * env;
-        J.rootX = Math.sin(b * 0.5) * 0.14 * env;
-        J.rootRY = Math.sin(b * 0.5) * 0.22 * env;
-        J.torsoZ = -step * 0.1 * env + J.torsoZ * (1 - env);
-        J.torsoY += Math.sin(b * 0.5) * 0.12 * env;
-        J.hipLx = -Math.max(0, step) * 0.5 * env;
-        J.hipRx = -Math.max(0, -step) * 0.5 * env;
-        J.kneeL = Math.max(0, step) * 0.95 * env;
-        J.kneeR = Math.max(0, -step) * 0.95 * env;
-        J.hipL += step * 0.05 * env;
-        J.hipR += step * 0.05 * env;
-        // right hand up, twirling the pañuelo
-        J.shRz = THREE.MathUtils.lerp(J.shRz, -2.3 + Math.sin(b) * 0.15, env);
-        J.shRx = THREE.MathUtils.lerp(J.shRx, -0.2, env);
-        J.elR = THREE.MathUtils.lerp(J.elR, -0.35, env);
-        J.elRz = THREE.MathUtils.lerp(0, Math.sin(b * 2) * 0.45, env);
-        J.hRz = THREE.MathUtils.lerp(0, Math.cos(b * 2) * 0.5, env);
-        J.hanky = env;
-        // left hand on the hip
-        J.shLz = THREE.MathUtils.lerp(J.shLz, 0.75, env);
-        J.shLx = THREE.MathUtils.lerp(J.shLx, 0.15, env);
-        J.elL = THREE.MathUtils.lerp(J.elL, -0.2, env);
-        J.elLz = THREE.MathUtils.lerp(0, -1.7, env);
-        J.headX += Math.sin(b * 2) * 0.05 * env;
-        J.headZ = THREE.MathUtils.lerp(J.headZ, step * 0.12, env);
-        J.hatTilt = step * 0.05 * env;
+      } else if (G === "floss") {
+        // The Floss: straight arms swing together from side to side, the crossing arm in front of
+        // the body and the outer arm behind, while the hips swing the opposite way.
+        const sw = Math.sin(s.gT * BEAT * Math.PI); // +1 → arms to his left, −1 → to his right
+        const front = Math.max(0, sw);
+        const back = Math.max(0, -sw);
+        J.shRz = THREE.MathUtils.lerp(J.shRz, -0.15 + sw * 0.62, env);
+        J.shLz = THREE.MathUtils.lerp(J.shLz, 0.15 + sw * 0.62, env);
+        J.shRx = THREE.MathUtils.lerp(J.shRx, -0.62 * front + 0.5 * back, env);
+        J.shLx = THREE.MathUtils.lerp(J.shLx, -0.62 * back + 0.5 * front, env);
+        J.elR = THREE.MathUtils.lerp(J.elR, -0.08, env);
+        J.elL = THREE.MathUtils.lerp(J.elL, -0.08, env);
+        J.curl = env;
+        J.rootX = -sw * 0.19 * env;
+        J.rootRY = -sw * 0.12 * env;
+        J.torsoZ = THREE.MathUtils.lerp(J.torsoZ, sw * 0.17, env);
+        J.hipL += -sw * 0.12 * env;
+        J.hipR += -sw * 0.12 * env;
+        J.knee = THREE.MathUtils.lerp(J.knee, 0.12, env);
+        J.bounce = Math.abs(sw) * 0.025 * env;
+        J.headZ = THREE.MathUtils.lerp(J.headZ, -sw * 0.08, env);
+        J.headY = THREE.MathUtils.lerp(J.headY, 0, env * 0.6);
+        J.happy = env;
+      } else if (G === "orangeJustice") {
+        // Orange Justice: a leg swings out to the side on every beat with a bent knee, the body
+        // twists into it, and both forearms pump up and down in front, bent at the elbow.
+        const b = s.gT * BEAT * Math.PI;
+        const step = Math.sin(b); // + → left leg out, − → right leg out
+        const L = Math.max(0, step);
+        const R = Math.max(0, -step);
+        J.hipL += L * 0.42 * env;
+        J.hipR -= R * 0.42 * env;
+        J.hipLx = -L * 0.35 * env;
+        J.hipRx = -R * 0.35 * env;
+        J.kneeL = L * 0.75 * env;
+        J.kneeR = R * 0.75 * env;
+        J.knee = THREE.MathUtils.lerp(J.knee, 0.18, env);
+        J.bounce = (1 - Math.abs(step)) * 0.05 * env;
+        J.rootX = -step * 0.09 * env;
+        J.rootRY = step * 0.28 * env;
+        J.torsoZ = THREE.MathUtils.lerp(J.torsoZ, -step * 0.09, env);
+        const pump = Math.sin(b * 2); // forearms pump twice per step
+        J.shRz = THREE.MathUtils.lerp(J.shRz, -0.38, env);
+        J.shLz = THREE.MathUtils.lerp(J.shLz, 0.38, env);
+        J.shRx = THREE.MathUtils.lerp(J.shRx, -0.5 + pump * 0.35, env);
+        J.shLx = THREE.MathUtils.lerp(J.shLx, -0.5 - pump * 0.35, env);
+        J.elR = THREE.MathUtils.lerp(J.elR, -1.45, env);
+        J.elL = THREE.MathUtils.lerp(J.elL, -1.45, env);
+        J.curl = env;
+        J.headX += Math.abs(pump) * 0.08 * env;
+        J.headY = THREE.MathUtils.lerp(J.headY, -step * 0.2, env);
+        J.happy = env;
+      } else if (G === "defaultDance") {
+        // The Default Dance: knees bent and bouncing, arms pumping alternately across the chest
+        // (one up, one down) for the first half, then forward leg kicks with the arms swinging
+        // opposite the kicking leg.
+        const b = s.gT * BEAT * Math.PI;
+        const beat = Math.sin(b);
+        const kicks = smooth(len * 0.45, len * 0.55, s.gT); // 0 → arm pumps, 1 → kicks
+        J.knee = THREE.MathUtils.lerp(J.knee, 0.32, env);
+        J.bounce = -Math.abs(beat) * 0.06 * env + 0.03 * env;
+        J.rootX = Math.sin(b * 0.5) * 0.08 * env;
+        J.torsoZ = THREE.MathUtils.lerp(J.torsoZ, beat * 0.07, env);
+        J.torsoY += beat * 0.1 * env;
+        // first half: alternate arm pumps in front of the chest
+        const armR = THREE.MathUtils.lerp(-1.1 + beat * 0.75, -0.25 - beat * 0.6, kicks);
+        const armL = THREE.MathUtils.lerp(-1.1 - beat * 0.75, -0.25 + beat * 0.6, kicks);
+        J.shRx = THREE.MathUtils.lerp(J.shRx, armR, env);
+        J.shLx = THREE.MathUtils.lerp(J.shLx, armL, env);
+        J.shRz = THREE.MathUtils.lerp(J.shRz, THREE.MathUtils.lerp(0.15, -0.3, kicks), env);
+        J.shLz = THREE.MathUtils.lerp(J.shLz, THREE.MathUtils.lerp(-0.15, 0.3, kicks), env);
+        J.elR = THREE.MathUtils.lerp(J.elR, THREE.MathUtils.lerp(-1.25, -0.5, kicks), env);
+        J.elL = THREE.MathUtils.lerp(J.elL, THREE.MathUtils.lerp(-1.25, -0.5, kicks), env);
+        J.curl = env;
+        // second half: kick forward, alternating legs
+        J.hipLx = -Math.max(0, beat) * 0.85 * kicks * env;
+        J.hipRx = -Math.max(0, -beat) * 0.85 * kicks * env;
+        J.kneeL = -Math.max(0, beat) * 0.2 * kicks * env;
+        J.kneeR = -Math.max(0, -beat) * 0.2 * kicks * env;
+        J.headX += Math.abs(beat) * 0.07 * env;
+        J.headZ = THREE.MathUtils.lerp(J.headZ, beat * 0.08, env);
         J.happy = env;
       }
     }
@@ -1036,9 +1095,9 @@ export function Robot({ shared, still = false }: { shared: Shared; still?: boole
     // ---- apply with springs (smooth, never snaps) ----
     const k = 7.5;
     const cur = s.j;
-    const fast = G === "takirari" ? 16 : 14;
+    const dancingNow = isDance(G) && inGesture;
     for (const key in J) {
-      const lam = key === "elRz" || key === "hRz" ? fast : G === "takirari" ? 11 : k;
+      const lam = dancingNow ? 15 : key === "elRz" || key === "hRz" ? 14 : k;
       cur[key] = damp(cur[key] ?? J[key], J[key], lam, dt);
     }
 
@@ -1069,11 +1128,6 @@ export function Robot({ shared, still = false }: { shared: Shared; still?: boole
       const c = (t * 0.5) % 1;
       browserCursor.current.position.set(-0.15 + smooth(0, 0.5, c) * 0.32, 0.05 - smooth(0, 0.5, c) * 0.2, 0.06);
       browserCursor.current.scale.setScalar(c > 0.55 && c < 0.65 ? 0.8 : 1);
-    }
-    if (hanky.current) {
-      const h = cur.hanky;
-      hanky.current.scale.setScalar(h < 0.02 ? 0 : h);
-      hanky.current.rotation.set(Math.sin(t * 9) * 0.35, Math.sin(t * 6.5) * 0.6, Math.cos(t * 8) * 0.3);
     }
     if (torso.current) torso.current.rotation.set(0, cur.torsoY, cur.torsoZ);
     if (chest.current) {
@@ -1537,11 +1591,6 @@ export function Robot({ shared, still = false }: { shared: Shared; still?: boole
                       <mesh material={mats.accent} position={[0.01, 0.06, 0.034]}>
                         <boxGeometry args={[0.12, 0.02, 0.002]} />
                       </mesh>
-                    </group>
-                  )}
-                  {side < 0 && (
-                    <group ref={hanky} position={[0, -0.2, 0.02]} scale={0}>
-                      <mesh geometry={geo.tri} material={mats.scarf} rotation={[0, 0, Math.PI]} position={[0, -0.02, 0]} scale={[0.75, 0.9, 1]} />
                     </group>
                   )}
                 </group>
